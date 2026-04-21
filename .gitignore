@@ -1,2 +1,51 @@
+# Model weights (download via scripts/download_model/)
+android/app/src/main/assets/models/
+ai/fine_tuning/checkpoints/
+*.bin
+*.gguf
+*.safetensors
+*.pt
+*.pth
+
+# Android build
+*.apk
+*.aab
+android/.gradle/
+android/app/build/
+android/build/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+*.egg-info/
+dist/
+.pytest_cache/
+
+# Secrets
+.env
+*.env.local
+secrets/
+*_key.json
+
+# Data (regenerate via scripts/build_db/)
+data/raw/
+data/processed/
+data/schemes/sqlite/*.db
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+
 temp/
+
 judge.md
+
+.sixth/
+
+PROJECT_PLAN.md
