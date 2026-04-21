@@ -30,6 +30,7 @@ object AppModule {
         )
             // Pre-populated from assets on first install
             // .createFromAsset("databases/pocket_sarkar_seed.db")
+            .addMigrations(PocketSarkarDatabase.MIGRATION_1_2)
             .fallbackToDestructiveMigration()
             .build()
     }

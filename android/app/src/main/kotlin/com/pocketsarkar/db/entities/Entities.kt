@@ -40,7 +40,7 @@ data class Scheme(
 // Mirrors the text fields from Scheme that users might search by.
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-@Fts4(contentEntity = Scheme::class)
+@Fts5(contentEntity = Scheme::class)
 @Entity(tableName = "schemes_fts")
 data class SchemeFts(
     val nameEn: String,
