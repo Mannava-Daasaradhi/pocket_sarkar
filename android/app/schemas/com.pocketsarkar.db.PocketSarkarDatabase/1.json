@@ -1,0 +1,341 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "3f9b53d6e6a44e2e2ca0a38c83e96063",
+    "entities": [
+      {
+        "tableName": "schemes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `nameEn` TEXT NOT NULL, `nameHi` TEXT NOT NULL, `nameLocal` TEXT, `category` TEXT NOT NULL, `ministryEn` TEXT NOT NULL, `descriptionEn` TEXT NOT NULL, `descriptionHi` TEXT NOT NULL, `benefitAmount` TEXT, `benefitType` TEXT NOT NULL, `targetStates` TEXT NOT NULL, `targetGender` TEXT NOT NULL, `targetCategory` TEXT NOT NULL, `portalUrl` TEXT, `helplineNumber` TEXT, `confidenceScore` REAL NOT NULL, `lastVerifiedEpoch` INTEGER NOT NULL, `isActive` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nameEn",
+            "columnName": "nameEn",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nameHi",
+            "columnName": "nameHi",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nameLocal",
+            "columnName": "nameLocal",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ministryEn",
+            "columnName": "ministryEn",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "descriptionEn",
+            "columnName": "descriptionEn",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "descriptionHi",
+            "columnName": "descriptionHi",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "benefitAmount",
+            "columnName": "benefitAmount",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "benefitType",
+            "columnName": "benefitType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "targetStates",
+            "columnName": "targetStates",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "targetGender",
+            "columnName": "targetGender",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "targetCategory",
+            "columnName": "targetCategory",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "portalUrl",
+            "columnName": "portalUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "helplineNumber",
+            "columnName": "helplineNumber",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "confidenceScore",
+            "columnName": "confidenceScore",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastVerifiedEpoch",
+            "columnName": "lastVerifiedEpoch",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "isActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "ftsVersion": "FTS4",
+        "ftsOptions": {
+          "tokenizer": "simple",
+          "tokenizerArgs": [],
+          "contentTable": "schemes",
+          "languageIdColumnName": "",
+          "matchInfo": "FTS4",
+          "notIndexedColumns": [],
+          "prefixSizes": [],
+          "preferredOrder": "ASC"
+        },
+        "contentSyncTriggers": [
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_schemes_fts_BEFORE_UPDATE BEFORE UPDATE ON `schemes` BEGIN DELETE FROM `schemes_fts` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_schemes_fts_BEFORE_DELETE BEFORE DELETE ON `schemes` BEGIN DELETE FROM `schemes_fts` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_schemes_fts_AFTER_UPDATE AFTER UPDATE ON `schemes` BEGIN INSERT INTO `schemes_fts`(`docid`, `nameEn`, `nameHi`, `descriptionEn`, `descriptionHi`, `category`, `benefitType`) VALUES (NEW.`rowid`, NEW.`nameEn`, NEW.`nameHi`, NEW.`descriptionEn`, NEW.`descriptionHi`, NEW.`category`, NEW.`benefitType`); END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_schemes_fts_AFTER_INSERT AFTER INSERT ON `schemes` BEGIN INSERT INTO `schemes_fts`(`docid`, `nameEn`, `nameHi`, `descriptionEn`, `descriptionHi`, `category`, `benefitType`) VALUES (NEW.`rowid`, NEW.`nameEn`, NEW.`nameHi`, NEW.`descriptionEn`, NEW.`descriptionHi`, NEW.`category`, NEW.`benefitType`); END"
+        ],
+        "tableName": "schemes_fts",
+        "createSql": "CREATE VIRTUAL TABLE IF NOT EXISTS `${TABLE_NAME}` USING FTS4(`nameEn` TEXT NOT NULL, `nameHi` TEXT NOT NULL, `descriptionEn` TEXT NOT NULL, `descriptionHi` TEXT NOT NULL, `category` TEXT NOT NULL, `benefitType` TEXT NOT NULL, content=`schemes`)",
+        "fields": [
+          {
+            "fieldPath": "nameEn",
+            "columnName": "nameEn",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nameHi",
+            "columnName": "nameHi",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "descriptionEn",
+            "columnName": "descriptionEn",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "descriptionHi",
+            "columnName": "descriptionHi",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "benefitType",
+            "columnName": "benefitType",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": []
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "eligibility_rules",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ruleId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `schemeId` TEXT NOT NULL, `field` TEXT NOT NULL, `operator` TEXT NOT NULL, `value` TEXT NOT NULL, `labelEn` TEXT NOT NULL, `labelHi` TEXT NOT NULL, FOREIGN KEY(`schemeId`) REFERENCES `schemes`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "ruleId",
+            "columnName": "ruleId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "schemeId",
+            "columnName": "schemeId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "field",
+            "columnName": "field",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "operator",
+            "columnName": "operator",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "labelEn",
+            "columnName": "labelEn",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "labelHi",
+            "columnName": "labelHi",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "ruleId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_eligibility_rules_schemeId",
+            "unique": false,
+            "columnNames": [
+              "schemeId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_eligibility_rules_schemeId` ON `${TABLE_NAME}` (`schemeId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "schemes",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "schemeId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "helpline_numbers",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `nameEn` TEXT NOT NULL, `nameHi` TEXT NOT NULL, `number` TEXT NOT NULL, `category` TEXT NOT NULL, `states` TEXT NOT NULL, `available24x7` INTEGER NOT NULL, `isTollFree` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nameEn",
+            "columnName": "nameEn",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nameHi",
+            "columnName": "nameHi",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "number",
+            "columnName": "number",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "states",
+            "columnName": "states",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "available24x7",
+            "columnName": "available24x7",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isTollFree",
+            "columnName": "isTollFree",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3f9b53d6e6a44e2e2ca0a38c83e96063')"
+    ]
+  }
+}

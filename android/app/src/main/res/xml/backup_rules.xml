@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Exclude model weights (1.6GB — not worth backing up) -->
+    <exclude domain="file" path="models/" />
+    <exclude domain="external" path="models/" />
+    <!-- DB excluded — user has no account, DB is repopulated from bundled seed -->
+    <exclude domain="database" path="pocket_sarkar.db" />
+</full-backup-content>
