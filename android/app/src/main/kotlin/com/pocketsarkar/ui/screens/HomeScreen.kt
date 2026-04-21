@@ -1,4 +1,4 @@
-package com.pocketsarkar.ui.screens
+﻿package com.pocketsarkar.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -31,15 +31,15 @@ fun HomeScreen(onNavigate: (Screen) -> Unit) {
     val modules = listOf(
         ModuleCard(
             screen = Screen.Decoder,
-            titleHindi = "दस्तावेज़ डीकोडर",
+            titleHindi = "à¤¦à¤¸à¥à¤¤à¤¾à¤µà¥‡à¤œà¤¼ à¤¡à¥€à¤•à¥‹à¤¡à¤°",
             titleEnglish = "Document Decoder",
-            description = "Scan any document — loan, rental, legal notice",
+            description = "Scan any document â€” loan, rental, legal notice",
             icon = Icons.Default.DocumentScanner,
             color = MaterialTheme.colorScheme.errorContainer
         ),
         ModuleCard(
             screen = Screen.Schemes,
-            titleHindi = "सरकारी योजनाएं",
+            titleHindi = "à¤¸à¤°à¤•à¤¾à¤°à¥€ à¤¯à¥‹à¤œà¤¨à¤¾à¤à¤‚",
             titleEnglish = "Scheme Explainer",
             description = "Find government schemes you qualify for",
             icon = Icons.Default.AccountBalance,
@@ -47,7 +47,7 @@ fun HomeScreen(onNavigate: (Screen) -> Unit) {
         ),
         ModuleCard(
             screen = Screen.Radar,
-            titleHindi = "अवसर राडार",
+            titleHindi = "à¤…à¤µà¤¸à¤° à¤°à¤¾à¤¡à¤¾à¤°",
             titleEnglish = "Opportunity Radar",
             description = "Schemes you didn't know you were eligible for",
             icon = Icons.Default.Radar,
@@ -55,7 +55,7 @@ fun HomeScreen(onNavigate: (Screen) -> Unit) {
         ),
         ModuleCard(
             screen = Screen.Rights,
-            titleHindi = "अधिकार साथी",
+            titleHindi = "à¤…à¤§à¤¿à¤•à¤¾à¤° à¤¸à¤¾à¤¥à¥€",
             titleEnglish = "Rights Companion",
             description = "Know your rights in any situation",
             icon = Icons.Default.Gavel,
@@ -74,7 +74,7 @@ fun HomeScreen(onNavigate: (Screen) -> Unit) {
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "पॉकेट सरकार",
+                            text = "à¤ªà¥‰à¤•à¥‡à¤Ÿ à¤¸à¤°à¤•à¤¾à¤°",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -154,3 +154,4 @@ private fun ModuleCardItem(
         }
     }
 }
+

@@ -6,6 +6,8 @@ import com.pocketsarkar.ai.mediapipe.GemmaEngine
 import com.pocketsarkar.db.dao.SchemeDao
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.json.JSONObject
 import javax.inject.Inject
 
@@ -28,6 +30,7 @@ class SchemeExplainer @Inject constructor(
     private val eligibilityEngine: EligibilityEngine,
 ) {
     private val conversationHistory = mutableListOf<ChatTurn>()
+    private val historyMutex = Mutex()
 
     /**
      * Main entry: process a user query through the full function-calling pipeline.
@@ -45,7 +48,7 @@ class SchemeExplainer @Inject constructor(
         val toolCallResponse = gemma.generate(
             systemPrompt = TOOL_CALL_SYSTEM_PROMPT,
             userPrompt = buildToolCallPrompt(userMessage, userProfile),
-            conversationHistory = conversationHistory
+            conversationHistory = historyMutex.withLock { conversationHistory.toList() }
         )
 
         // Step 2: Parse and execute the tool call
@@ -59,21 +62,25 @@ class SchemeExplainer @Inject constructor(
         )
 
         val fullResponse = StringBuilder()
-        gemma.generateStream(
-            systemPrompt = EXPLAIN_SYSTEM_PROMPT,
-            userPrompt = explainPrompt,
-            conversationHistory = conversationHistory
-        ).collect { token ->
-            fullResponse.append(token)
-            emit(token)
+        try {
+            gemma.generateStream(
+                systemPrompt = EXPLAIN_SYSTEM_PROMPT,
+                userPrompt = explainPrompt,
+                conversationHistory = historyMutex.withLock { conversationHistory.toList() }
+            ).collect { token ->
+                fullResponse.append(token)
+                emit(token)
+            }
+        } finally {
+            // Always update history even if stream errors or is cancelled
+            historyMutex.withLock {
+                conversationHistory.add(ChatTurn(ChatRole.USER, userMessage))
+                conversationHistory.add(ChatTurn(ChatRole.ASSISTANT, fullResponse.toString()))
+            }
         }
-
-        // Update conversation history for multi-turn
-        conversationHistory.add(ChatTurn(ChatRole.USER, userMessage))
-        conversationHistory.add(ChatTurn(ChatRole.ASSISTANT, fullResponse.toString()))
     }
 
-    fun clearHistory() = conversationHistory.clear()
+    fun clearHistory() = historyMutex.withLock { conversationHistory.clear() }
 
     // â”€â”€ Tool call execution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -100,12 +107,15 @@ class SchemeExplainer @Inject constructor(
                     SchemeQueryResult(schemes = schemes, queryUsed = query)
                 }
                 "get_eligible_schemes" -> {
-                    val p = profile ?: UserProfile()
-                    val eligible = eligibilityEngine.getEligibleSchemes(p)
-                    SchemeQueryResult(
-                        schemes = eligible.map { it.scheme },
-                        queryUsed = "eligibility_check"
-                    )
+                    if (profile == null) {
+                        SchemeQueryResult(schemes = emptyList(), queryUsed = "no_profile_provided")
+                    } else {
+                        val eligible = eligibilityEngine.getEligibleSchemes(profile)
+                        SchemeQueryResult(
+                            schemes = eligible.map { it.scheme },
+                            queryUsed = "eligibility_check"
+                        )
+                    }
                 }
                 "check_fake_scheme" -> {
                     // Returns empty â€” signals to explain why the scheme seems fake
@@ -219,5 +229,6 @@ private data class SchemeQueryResult(
     val queryUsed: String,
     val isFakeCheck: Boolean = false,
 )
+
 
 

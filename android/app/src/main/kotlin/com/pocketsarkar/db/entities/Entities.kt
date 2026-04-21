@@ -1,10 +1,10 @@
-package com.pocketsarkar.db.entities
+﻿package com.pocketsarkar.db.entities
 
 import androidx.room.*
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Scheme — one row per government scheme (447 at launch)
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Scheme â€” one row per government scheme (447 at launch)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Entity(tableName = "schemes")
 data class Scheme(
@@ -13,12 +13,12 @@ data class Scheme(
     val nameHi: String,
     val nameLocal: String? = null,               // State-language name
 
-    val category: String,                        // "agriculture" | "education" | "housing" …
+    val category: String,                        // "agriculture" | "education" | "housing" â€¦
     val ministryEn: String,
     val descriptionEn: String,
     val descriptionHi: String,
 
-    val benefitAmount: String? = null,           // "₹6,000/year" — human readable
+    val benefitAmount: String? = null,           // "â‚¹6,000/year" â€” human readable
     val benefitType: String,                     // "cash" | "subsidy" | "service" | "insurance"
 
     val targetStates: String = "ALL",            // "ALL" or "UP,MP,RJ" etc.
@@ -35,12 +35,12 @@ data class Scheme(
     val isActive: Boolean = true
 )
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SchemeFts — FTS5 virtual table for fast full-text search
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// SchemeFts â€” FTS5 virtual table for fast full-text search
 // Mirrors the text fields from Scheme that users might search by.
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-@Fts4(contentEntity = Scheme::class)       // Room uses Fts4 annotation but supports FTS5 via raw SQL
+@Fts5(contentEntity = Scheme::class)       // Room uses Fts4 annotation but supports FTS5 via raw SQL
 @Entity(tableName = "schemes_fts")
 data class SchemeFts(
     val nameEn: String,
@@ -51,10 +51,10 @@ data class SchemeFts(
     val benefitType: String,
 )
 
-// ─────────────────────────────────────────────────────────────────────────────
-// EligibilityRule — one row per eligibility criterion per scheme
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// EligibilityRule â€” one row per eligibility criterion per scheme
 // Stored separately so the engine can evaluate without full-text loading.
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Entity(
     tableName = "eligibility_rules",
@@ -84,9 +84,9 @@ data class EligibilityRule(
     val labelHi: String,
 )
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HelplineNumber — offline emergency contacts
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// HelplineNumber â€” offline emergency contacts
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Entity(tableName = "helpline_numbers")
 data class HelplineNumber(
@@ -99,3 +99,5 @@ data class HelplineNumber(
     val available24x7: Boolean = false,
     val isTollFree: Boolean = true,
 )
+
+

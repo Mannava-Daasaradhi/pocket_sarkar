@@ -62,10 +62,16 @@ class GemmaEngine @Inject constructor(
         val externalModel = File(context.getExternalFilesDir(null), "models/$MODEL_FILE")
         if (externalModel.exists()) return externalModel.absolutePath
         return try {
-            context.assets.openFd("models/$MODEL_FILE").use { it.fileDescriptor.toString() }
-            "models/$MODEL_FILE"
+            // Copy asset to filesDir so MediaPipe gets a real filesystem path
+            val outFile = File(context.filesDir, MODEL_FILE)
+            if (!outFile.exists()) {
+                context.assets.open("models/$MODEL_FILE").use { input ->
+                    outFile.outputStream().use { output -> input.copyTo(output) }
+                }
+            }
+            outFile.absolutePath
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to open model file models/$MODEL_FILE", e)
+            Log.e(TAG, "Failed to extract model asset models/$MODEL_FILE", e)
             null
         }
     }
@@ -130,6 +136,11 @@ class GemmaEngine @Inject constructor(
         }
     }
 
+    // NOTE: image param is currently unused — MediaPipe 0.10.20 vision API
+    // requires MPImage + session.addImage() which needs GraphOptions.setEnableVisionModality(true).
+    // Wire this properly in Phase 4 when DocumentDecoder is fully implemented.
+    // For now falls back to text-only inference so the build compiles.
+    @Suppress("UNUSED_PARAMETER")
     suspend fun generateWithImage(
         systemPrompt: String,
         userPrompt: String,
@@ -189,5 +200,7 @@ class GemmaEngine @Inject constructor(
 
 data class ChatTurn(val role: ChatRole, val content: String)
 enum class ChatRole { USER, ASSISTANT }
+
+
 
 

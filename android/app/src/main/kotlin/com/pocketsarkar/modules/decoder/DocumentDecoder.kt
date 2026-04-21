@@ -61,8 +61,8 @@ class DocumentDecoder @Inject constructor(
             .filter { it.startsWith("ðŸš¨") || it.startsWith("âš ï¸") }
             .map { line ->
                 RedFlag(
-                    severity = if (line.startsWith("ðŸš¨")) Severity.CRITICAL else Severity.MODERATE,
-                    description = line.drop(2).trim()
+                    severity = if (line.startsWith("RED_FLAG_CRITICAL:")) Severity.CRITICAL else Severity.MODERATE,
+                    description = line.substringAfter(":").trim()
                 )
             }
 
@@ -70,7 +70,8 @@ class DocumentDecoder @Inject constructor(
         val riskScore = when {
             riskScoreRaw.contains("HIGH", ignoreCase = true) -> RiskScore.HIGH
             riskScoreRaw.contains("CAUTION", ignoreCase = true) -> RiskScore.CAUTION
-            else -> RiskScore.CAUTION
+            riskScoreRaw.contains("SAFE", ignoreCase = true) -> RiskScore.SAFE
+            else -> RiskScore.CAUTION  // unknown parse = cautious default
         }
 
         val questions = lines
@@ -153,5 +154,6 @@ data class RedFlag(
 enum class Severity { CRITICAL, MODERATE }
 
 enum class RiskScore { SAFE, CAUTION, HIGH }
+
 
 
