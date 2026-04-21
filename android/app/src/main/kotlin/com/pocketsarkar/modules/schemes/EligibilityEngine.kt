@@ -111,7 +111,7 @@ class EligibilityEngine @Inject constructor(
             "gt"  -> actual > threshold
             "gte" -> actual >= threshold
             "eq"  -> actual == threshold
-            else  -> true
+            else  -> false
         }
     }
 }
@@ -142,4 +142,5 @@ data class EligibleSchemeResult(
     val metCriteria: List<String>,
     val confidence: Float,
 )
+
 

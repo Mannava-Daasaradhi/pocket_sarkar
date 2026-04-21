@@ -1,6 +1,7 @@
 ﻿package com.pocketsarkar.ai.mediapipe
 
 import android.content.Context
+import android.util.Log
 import android.graphics.Bitmap
 import com.google.mediapipe.tasks.core.OutputHandler
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
@@ -22,6 +23,7 @@ class GemmaEngine @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     companion object {
+        private const val TAG = "GemmaEngine"
         private const val MODEL_FILE = "gemma4-e4b-it-int4.task"
         private const val MAX_TOKENS = 1024
         private const val TOP_K = 40
@@ -63,6 +65,7 @@ class GemmaEngine @Inject constructor(
             context.assets.openFd("models/$MODEL_FILE").use { it.fileDescriptor.toString() }
             "models/$MODEL_FILE"
         } catch (e: Exception) {
+            Log.e(TAG, "Failed to open model file models/$MODEL_FILE", e)
             null
         }
     }
@@ -186,4 +189,5 @@ class GemmaEngine @Inject constructor(
 
 data class ChatTurn(val role: ChatRole, val content: String)
 enum class ChatRole { USER, ASSISTANT }
+
 

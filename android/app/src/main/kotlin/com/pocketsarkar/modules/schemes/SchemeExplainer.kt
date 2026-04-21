@@ -114,8 +114,13 @@ class SchemeExplainer @Inject constructor(
                 else -> SchemeQueryResult(schemes = emptyList(), queryUsed = tool)
             }
         }.getOrElse {
-            // If tool call parsing fails, do a plain text search as fallback
-            val schemes = schemeDao.searchSchemes(toolCallJson.take(100), limit = 3)
+            // If tool call parsing fails, sanitize and do a plain text search as fallback
+            val cleanedQuery = toolCallJson
+                .replace(Regex("""[{}\[\]"\\:,]"""), " ")
+                .replace(Regex("""\s+"""), " ")
+                .trim()
+                .take(100)
+            val schemes = schemeDao.searchSchemes(cleanedQuery, limit = 3)
             SchemeQueryResult(schemes = schemes, queryUsed = "fallback_search")
         }
     }
@@ -214,4 +219,5 @@ private data class SchemeQueryResult(
     val queryUsed: String,
     val isFakeCheck: Boolean = false,
 )
+
 
