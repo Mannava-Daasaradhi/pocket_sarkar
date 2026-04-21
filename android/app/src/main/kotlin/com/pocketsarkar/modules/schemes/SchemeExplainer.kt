@@ -80,7 +80,7 @@ class SchemeExplainer @Inject constructor(
         }
     }
 
-    fun clearHistory() = historyMutex.withLock { conversationHistory.clear() }
+    suspend fun clearHistory() = historyMutex.withLock { conversationHistory.clear() }
 
     // â”€â”€ Tool call execution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -229,6 +229,3 @@ private data class SchemeQueryResult(
     val queryUsed: String,
     val isFakeCheck: Boolean = false,
 )
-
-
-

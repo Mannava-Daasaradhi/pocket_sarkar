@@ -40,7 +40,7 @@ data class Scheme(
 // Mirrors the text fields from Scheme that users might search by.
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-@Fts5(contentEntity = Scheme::class)       // Room uses Fts4 annotation but supports FTS5 via raw SQL
+@Fts4(contentEntity = Scheme::class)
 @Entity(tableName = "schemes_fts")
 data class SchemeFts(
     val nameEn: String,
@@ -99,5 +99,3 @@ data class HelplineNumber(
     val available24x7: Boolean = false,
     val isTollFree: Boolean = true,
 )
-
-
