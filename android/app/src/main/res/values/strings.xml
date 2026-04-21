@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pocket Sarkar</string>
+    <string name="app_tagline">Sarkar ki bhasha, ab aapki bhasha mein.</string>
+
+    <!-- Module names -->
+    <string name="module_decoder">Document Decoder</string>
+    <string name="module_decoder_hi">दस्तावेज़ डीकोडर</string>
+    <string name="module_schemes">Scheme Explainer</string>
+    <string name="module_schemes_hi">सरकारी योजनाएं</string>
+    <string name="module_radar">Opportunity Radar</string>
+    <string name="module_radar_hi">अवसर राडार</string>
+    <string name="module_rights">Rights Companion</string>
+    <string name="module_rights_hi">अधिकार साथी</string>
+    <string name="module_formpilot">Form Co-Pilot</string>
+    <string name="module_formpilot_hi">फॉर्म सहायक</string>
+
+    <!-- Common actions -->
+    <string name="action_back">Back</string>
+    <string name="action_scan">Scan Document</string>
+    <string name="action_upload">Upload File</string>
+    <string name="action_ask">Ask a Question</string>
+    <string name="action_speak">Speak</string>
+    <string name="action_retry">Try Again</string>
+
+    <!-- Model loading -->
+    <string name="model_loading">Loading AI model…</string>
+    <string name="model_not_found">Model not found. Please download it first.</string>
+
+    <!-- Risk scores -->
+    <string name="risk_safe">✅ SAFE</string>
+    <string name="risk_caution">⚠️ CAUTION</string>
+    <string name="risk_high">🔴 HIGH RISK</string>
+
+    <!-- Confidence warning -->
+    <string name="confidence_stale">Ye jaankari thodi purani ho sakti hai</string>
+    <string name="confidence_stale_en">This information may be outdated — verify before applying</string>
+
+    <!-- Errors -->
+    <string name="error_no_model">AI model not loaded. Tap to download (1.6GB needed).</string>
+    <string name="error_camera_permission">Camera permission required for document scanning.</string>
+    <string name="error_mic_permission">Microphone permission required for voice input.</string>
+    <string name="error_low_quality_image">Image quality too low to read. Please take a clearer photo.</string>
+    <string name="error_no_schemes_found">Koi matching scheme nahi mili. myscheme.gov.in pe check karein.</string>
+</resources>
