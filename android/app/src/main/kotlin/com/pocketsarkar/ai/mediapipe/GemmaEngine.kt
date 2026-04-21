@@ -7,6 +7,8 @@ import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import com.google.mediapipe.tasks.genai.llminference.LlmInferenceSession
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -29,11 +31,14 @@ class GemmaEngine @Inject constructor(
     // Base engine for sync inference (no result listener)
     private var llmInference: LlmInference? = null
     private var modelPath: String? = null
+    private val initMutex = Mutex()
 
     val isLoaded: Boolean get() = llmInference != null
 
     suspend fun ensureLoaded() = withContext(Dispatchers.IO) {
         if (llmInference != null) return@withContext
+        initMutex.withLock {
+        if (llmInference != null) return@withLock
 
         val path = getModelPath()
             ?: error(
@@ -48,6 +53,7 @@ class GemmaEngine @Inject constructor(
             .build()
 
         llmInference = LlmInference.createFromOptions(context, options)
+        } // end initMutex.withLock
     }
 
     private fun getModelPath(): String? {
@@ -180,3 +186,4 @@ class GemmaEngine @Inject constructor(
 
 data class ChatTurn(val role: ChatRole, val content: String)
 enum class ChatRole { USER, ASSISTANT }
+

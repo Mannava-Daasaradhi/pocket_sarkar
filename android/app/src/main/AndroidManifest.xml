@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- ── Permissions ──────────────────────────────────────────────── -->
+    <!-- â”€â”€ Permissions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
 
     <!-- Voice input -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -22,7 +22,7 @@
     <!-- Vibration for feedback -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
-    <!-- Hardware features (optional — don't block install if missing) -->
+    <!-- Hardware features (optional â€” don't block install if missing) -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
@@ -38,7 +38,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PocketSarkar"
         android:largeHeap="true"
-        android:hardwareAccelerated="true">
+        android:hardwareAccelerated="true"
+        android:usesCleartextTraffic="true">
 
         <!-- Main entry point -->
         <activity
@@ -53,7 +54,7 @@
             </intent-filter>
         </activity>
 
-        <!-- ML Kit: disable auto model download — we bundle locally -->
+        <!-- ML Kit: disable auto model download â€” we bundle locally -->
         <meta-data
             android:name="com.google.mlkit.vision.DEPENDENCIES"
             android:value="ocr_latin,ocr_devanagari" />
@@ -61,3 +62,4 @@
     </application>
 
 </manifest>
+

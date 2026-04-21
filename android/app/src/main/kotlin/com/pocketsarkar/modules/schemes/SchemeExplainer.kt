@@ -1,4 +1,4 @@
-package com.pocketsarkar.modules.schemes
+﻿package com.pocketsarkar.modules.schemes
 
 import com.pocketsarkar.ai.mediapipe.ChatRole
 import com.pocketsarkar.ai.mediapipe.ChatTurn
@@ -14,13 +14,13 @@ import javax.inject.Inject
  *
  * The hallucination-prevention design:
  * 1. User asks a question
- * 2. Gemma 4 is given a TOOL CALL prompt — it outputs JSON like:
+ * 2. Gemma 4 is given a TOOL CALL prompt â€” it outputs JSON like:
  *    {"tool": "query_scheme_db", "args": {"query": "kisan pension", "state": "UP"}}
  * 3. We intercept this, run the actual SQLite query
  * 4. Feed the real DB results back to Gemma 4
- * 5. Gemma 4 explains ONLY what the DB returned — cannot invent schemes
+ * 5. Gemma 4 explains ONLY what the DB returned â€” cannot invent schemes
  *
- * Hallucination rate: 12% (pure generation) → 2.3% (function calling)
+ * Hallucination rate: 12% (pure generation) â†’ 2.3% (function calling)
  */
 class SchemeExplainer @Inject constructor(
     private val gemma: GemmaEngine,
@@ -75,7 +75,7 @@ class SchemeExplainer @Inject constructor(
 
     fun clearHistory() = conversationHistory.clear()
 
-    // ── Tool call execution ───────────────────────────────────────────────────
+    // â”€â”€ Tool call execution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private suspend fun executeToolCall(
         toolCallJson: String,
@@ -88,9 +88,15 @@ class SchemeExplainer @Inject constructor(
 
             when (tool) {
                 "query_scheme_db" -> {
-                    val query = args.optString("query", "")
+                    val query = args.optString("query", "").trim()
                     val state = args.optString("state", profile?.state ?: "ALL")
-                    val schemes = schemeDao.searchSchemes(query, limit = 5)
+                    val schemes = schemeDao.searchSchemes(query, limit = 20)
+                        .filter { scheme ->
+                            state == "ALL" ||
+                            scheme.targetStates == "ALL" ||
+                            scheme.targetStates.split(",").map { it.trim() }.contains(state)
+                        }
+                        .take(5)
                     SchemeQueryResult(schemes = schemes, queryUsed = query)
                 }
                 "get_eligible_schemes" -> {
@@ -102,7 +108,7 @@ class SchemeExplainer @Inject constructor(
                     )
                 }
                 "check_fake_scheme" -> {
-                    // Returns empty — signals to explain why the scheme seems fake
+                    // Returns empty â€” signals to explain why the scheme seems fake
                     SchemeQueryResult(schemes = emptyList(), queryUsed = "fake_check", isFakeCheck = true)
                 }
                 else -> SchemeQueryResult(schemes = emptyList(), queryUsed = tool)
@@ -166,7 +172,7 @@ class SchemeExplainer @Inject constructor(
         return """
             User asked: "$originalQuery"
             
-            VERIFIED DATABASE RESULTS (explain ONLY these — do not add or invent):
+            VERIFIED DATABASE RESULTS (explain ONLY these â€” do not add or invent):
             $schemesText
             
             Language: $language
@@ -190,14 +196,14 @@ Example: {"tool": "query_scheme_db", "args": {"query": "kisan pension", "state":
         """.trimIndent()
 
         private val EXPLAIN_SYSTEM_PROMPT = """
-You are Pocket Sarkar — a helpful civic assistant for Indian citizens.
+You are Pocket Sarkar â€” a helpful civic assistant for Indian citizens.
 
 Rules:
 - Explain ONLY the scheme data provided. Do not add or invent anything.
 - Use simple, conversational language. No bureaucratic jargon.
 - Banned words: "beneficiary", "provisions", "pursuant", "hereinafter", "notwithstanding"
 - Always mention: benefit amount, who qualifies, how to apply (1 step)
-- If confidence score < 70%, add: "Ye information thodi purani ho sakti hai — confirm karein"
+- If confidence score < 70%, add: "Ye information thodi purani ho sakti hai â€” confirm karein"
 - End with: "Kaunsa pehle dekhein? Document list bhi bata sakta hoon."
         """.trimIndent()
     }
@@ -208,3 +214,4 @@ private data class SchemeQueryResult(
     val queryUsed: String,
     val isFakeCheck: Boolean = false,
 )
+

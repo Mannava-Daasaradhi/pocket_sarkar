@@ -1,4 +1,4 @@
-package com.pocketsarkar.modules.schemes
+﻿package com.pocketsarkar.modules.schemes
 
 import com.pocketsarkar.db.dao.SchemeDao
 import com.pocketsarkar.db.entities.EligibilityRule
@@ -24,9 +24,10 @@ class EligibilityEngine @Inject constructor(
      * Sorted by confidence score descending (most verified first).
      */
     suspend fun getEligibleSchemes(profile: UserProfile): List<EligibleSchemeResult> {
+        val stateFilter = if (profile.state == "ALL") "" else profile.state
         val candidates = schemeDao.getSchemesByCategory(
             category = null,   // null = all categories
-            state = profile.state
+            state = stateFilter
         )
 
         return candidates
@@ -115,12 +116,12 @@ class EligibilityEngine @Inject constructor(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Data classes
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
- * The user's profile — built on-device via Opportunity Radar onboarding.
+ * The user's profile â€” built on-device via Opportunity Radar onboarding.
  * Never uploaded. Never stored server-side.
  */
 data class UserProfile(
@@ -130,7 +131,7 @@ data class UserProfile(
     val age: Int? = null,
     val gender: String = "ALL",                // "M" | "F" | "O" | "ALL"
     val socialCategory: String = "ALL",        // "GEN" | "OBC" | "SC" | "ST" | "EWS"
-    val occupation: String = "ALL",            // "farmer" | "student" | "worker" | "woman_shg" …
+    val occupation: String = "ALL",            // "farmer" | "student" | "worker" | "woman_shg" â€¦
     val isDisabled: Boolean = false,
     val hasAadhaar: Boolean = true,
     val hasBankAccount: Boolean = true,
@@ -141,3 +142,4 @@ data class EligibleSchemeResult(
     val metCriteria: List<String>,
     val confidence: Float,
 )
+
