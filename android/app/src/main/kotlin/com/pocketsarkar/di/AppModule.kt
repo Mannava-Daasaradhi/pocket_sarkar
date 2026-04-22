@@ -8,6 +8,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.requery.android.database.sqlite.RequerySQLiteOpenHelperFactory
 import javax.inject.Singleton
 
 @Module
@@ -24,6 +25,10 @@ object AppModule {
             PocketSarkarDatabase::class.java,
             "pocket_sarkar.db"
         )
+            // RequerySQLiteOpenHelperFactory bundles its own modern SQLite (3.45+)
+            // which ships with FTS5 support on ALL Android versions/OEMs including
+            // Samsung One UI which strips FTS5 from the system SQLite.
+            .openHelperFactory(RequerySQLiteOpenHelperFactory())
             .addCallback(PocketSarkarDatabase.ON_CREATE_CALLBACK)
             .addMigrations(PocketSarkarDatabase.MIGRATION_1_2)
             .fallbackToDestructiveMigration()

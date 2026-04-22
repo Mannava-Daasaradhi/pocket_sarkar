@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.pocketsarkar"
-        minSdk = 26          // Android 8.0 — covers 95%+ of target devices
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0-hackathon"
@@ -20,7 +20,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
 
-        // Room schema export directory (for version history)
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
             arg("room.incremental", "true")
@@ -32,7 +31,6 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             isDebuggable = true
-            // Disable R8 in debug for faster builds
             isMinifyEnabled = false
         }
         release {
@@ -42,7 +40,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Sign config will be added when you set up your keystore
         }
     }
 
@@ -63,19 +60,17 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            // Required for MediaPipe
             excludes += "META-INF/DEPENDENCIES"
         }
     }
 
-    // MediaPipe model files are large — don't compress them
     androidResources {
         noCompress += listOf("tflite", "task", "bin")
     }
 }
 
 dependencies {
-    // ── Compose BOM (manages all compose versions together) ──────────────────
+    // ── Compose BOM ───────────────────────────────────────────────────────────
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
     androidTestImplementation(composeBom)
@@ -95,6 +90,11 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.coroutines.android)
 
+    // ── Bundled SQLite with FTS5 ──────────────────────────────────────────────
+    // Samsung One UI ships a system SQLite WITHOUT fts5 compiled in.
+    // This bundles SQLite 3.45.0 with fts5 enabled so it works on all devices.
+    implementation(libs.sqlite.android)
+
     // ── Room — SQLite with FTS5 for scheme search ─────────────────────────────
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
@@ -106,8 +106,6 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
 
     // ── MediaPipe LLM Inference — Gemma 4 E4B on-device ──────────────────────
-    // Docs: https://developers.google.com/mediapipe/solutions/genai/llm_inference/android
-    // NOTE: check for newer version at deadline — Google updates this frequently
     implementation(libs.mediapipe.tasks.genai)
 
     // ── CameraX — document scanning ───────────────────────────────────────────
@@ -116,11 +114,11 @@ dependencies {
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.view)
 
-    // ── ML Kit — OCR fallback when vision confidence is low ───────────────────
+    // ── ML Kit — OCR fallback ─────────────────────────────────────────────────
     implementation(libs.mlkit.text.recognition)
-    implementation(libs.mlkit.text.recognition.devanagari)  // Hindi/Marathi/Sanskrit
+    implementation(libs.mlkit.text.recognition.devanagari)
 
-    // ── Networking — Ollama bridge + WhatsApp sync ────────────────────────────
+    // ── Networking — Ollama bridge + WhatsApp ─────────────────────────────────
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
     implementation(libs.retrofit)

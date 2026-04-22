@@ -17,6 +17,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // Required for requery/sqlite-android (bundled SQLite with FTS5)
+        maven { url = uri("https://jitpack.io") }
     }
 }
 

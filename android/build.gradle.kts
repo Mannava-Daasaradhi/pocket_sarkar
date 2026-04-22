@@ -1,8 +1,143 @@
-// Top-level build file. Add plugin configuration here, not in subprojects.
 plugins {
-    alias(libs.plugins.android.application) apply false
-    alias(libs.plugins.kotlin.android) apply false
-    alias(libs.plugins.kotlin.compose) apply false
-    alias(libs.plugins.hilt) apply false
-    alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
+}
+
+android {
+    namespace = "com.pocketsarkar"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = "com.pocketsarkar"
+        minSdk = 26          // Android 8.0 — covers 95%+ of target devices
+        targetSdk = 35
+        versionCode = 1
+        versionName = "0.1.0-hackathon"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables.useSupportLibrary = true
+
+        // Room schema export directory (for version history)
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas")
+            arg("room.incremental", "true")
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            isDebuggable = true
+            // Disable R8 in debug for faster builds
+            isMinifyEnabled = false
+        }
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            // Sign config will be added when you set up your keystore
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            // Required for MediaPipe
+            excludes += "META-INF/DEPENDENCIES"
+        }
+    }
+
+    // MediaPipe model files are large — don't compress them
+    androidResources {
+        noCompress += listOf("tflite", "task", "bin")
+    }
+}
+
+dependencies {
+    // ── Compose BOM (manages all compose versions together) ──────────────────
+    val composeBom = platform(libs.compose.bom)
+    implementation(composeBom)
+    androidTestImplementation(composeBom)
+
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.graphics)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons)
+    implementation(libs.activity.compose)
+    implementation(libs.navigation.compose)
+    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.lifecycle.runtime.compose)
+
+    // ── Core ──────────────────────────────────────────────────────────────────
+    implementation(libs.core.ktx)
+    implementation(libs.appcompat)
+    implementation(libs.coroutines.android)
+
+    // ── Room — SQLite with FTS5 for scheme search ─────────────────────────────
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
+
+    // ── Requery bundled SQLite — ships FTS5 on ALL OEMs (incl. Samsung One UI) ─
+    // Samsung strips FTS5 from system SQLite; requery bundles its own 3.45+ build.
+    implementation(libs.requery.android)
+
+    // ── Hilt — dependency injection ───────────────────────────────────────────
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
+
+    // ── MediaPipe LLM Inference — Gemma 4 E4B on-device ──────────────────────
+    // Docs: https://developers.google.com/mediapipe/solutions/genai/llm_inference/android
+    // NOTE: check for newer version at deadline — Google updates this frequently
+    implementation(libs.mediapipe.tasks.genai)
+
+    // ── CameraX — document scanning ───────────────────────────────────────────
+    implementation(libs.camera.core)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.lifecycle)
+    implementation(libs.camera.view)
+
+    // ── ML Kit — OCR fallback when vision confidence is low ───────────────────
+    implementation(libs.mlkit.text.recognition)
+    implementation(libs.mlkit.text.recognition.devanagari)  // Hindi/Marathi/Sanskrit
+
+    // ── Networking — Ollama bridge + WhatsApp sync ────────────────────────────
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.gson)
+
+    // ── Debug tools ───────────────────────────────────────────────────────────
+    debugImplementation(libs.compose.ui.tooling)
+    debugImplementation(libs.compose.ui.test.manifest)
+
+    // ── Testing ───────────────────────────────────────────────────────────────
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.junit.android)
+    androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(libs.compose.ui.test.junit4)
 }
