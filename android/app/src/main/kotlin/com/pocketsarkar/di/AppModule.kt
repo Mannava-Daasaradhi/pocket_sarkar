@@ -14,10 +14,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    /**
-     * Single Room database instance for the whole app lifetime.
-     * FTS5 virtual table is defined in the DB class.
-     */
     @Provides
     @Singleton
     fun providePocketSarkarDatabase(
@@ -28,8 +24,7 @@ object AppModule {
             PocketSarkarDatabase::class.java,
             "pocket_sarkar.db"
         )
-            // Pre-populated from assets on first install
-            // .createFromAsset("databases/pocket_sarkar_seed.db")
+            .addCallback(PocketSarkarDatabase.ON_CREATE_CALLBACK)
             .addMigrations(PocketSarkarDatabase.MIGRATION_1_2)
             .fallbackToDestructiveMigration()
             .build()
