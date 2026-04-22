@@ -73,7 +73,7 @@ room-ktx                            = { group = "androidx.room", name = "room-kt
 room-compiler                       = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 
 # Requery bundled SQLite — required for FTS5 on Samsung/OEM devices
-requery-android                     = { group = "io.requery", name = "sqlite-android", version.ref = "requeryAndroid" }
+requery-android                     = { group = "com.github.requery", name = "sqlite-android", version.ref = "requeryAndroid" }
 
 # Hilt
 hilt-android                        = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }

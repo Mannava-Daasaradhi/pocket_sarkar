@@ -93,7 +93,7 @@ dependencies {
     // ── Bundled SQLite with FTS5 ──────────────────────────────────────────────
     // Samsung One UI ships a system SQLite WITHOUT fts5 compiled in.
     // This bundles SQLite 3.45.0 with fts5 enabled so it works on all devices.
-    implementation(libs.sqlite.android)
+    implementation(libs.requery.android)
 
     // ── Room — SQLite with FTS5 for scheme search ─────────────────────────────
     implementation(libs.room.runtime)
