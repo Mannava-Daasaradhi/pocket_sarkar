@@ -813,116 +813,116 @@ object DatabaseSeeder {
     private val ALL_RULES = listOf(
 
         // PM Kisan — up to 2 hectares land, must be a farmer
-        EligibilityRule("PM_KISAN_001", "land_hectares", "lte", "2.0",
-            "Land holding up to 2 hectares", "2 हेक्टेयर तक भूमि जोत"),
-        EligibilityRule("PM_KISAN_001", "annual_income", "lte", "200000",
-            "Annual family income up to ₹2 lakh", "वार्षिक पारिवारिक आय ₹2 लाख तक"),
+        EligibilityRule(schemeId="PM_KISAN_001", field="land_hectares", operator="lte", value="2.0",
+            labelEn="Land holding up to 2 hectares", labelHi="2 हेक्टेयर तक भूमि जोत"),
+        EligibilityRule(schemeId="PM_KISAN_001", field="annual_income", operator="lte", value="200000",
+            labelEn="Annual family income up to ₹2 lakh", labelHi="वार्षिक पारिवारिक आय ₹2 लाख तक"),
 
         // Ayushman Bharat — SECC 2011 list
-        EligibilityRule("AYUSHMAN_BHARAT_011", "annual_income", "lte", "150000",
-            "Annual income up to ₹1.5 lakh (SECC)", "SECC के अनुसार ₹1.5 लाख तक वार्षिक आय"),
+        EligibilityRule(schemeId="AYUSHMAN_BHARAT_011", field="annual_income", operator="lte", value="150000",
+            labelEn="Annual income up to ₹1.5 lakh (SECC)", labelHi="SECC के अनुसार ₹1.5 लाख तक वार्षिक आय"),
 
         // MGNREGA — any rural household
-        EligibilityRule("MGNREGA_018", "state", "eq", "ALL",
-            "Rural household (any state)", "ग्रामीण परिवार (कोई भी राज्य)"),
+        EligibilityRule(schemeId="MGNREGA_018", field="state", operator="eq", value="ALL",
+            labelEn="Rural household (any state)", labelHi="ग्रामीण परिवार (कोई भी राज्य)"),
 
         // PM Ujjwala — BPL women only
-        EligibilityRule("PM_UJJWALA_027", "gender", "eq", "F",
-            "Must be a woman", "महिला होना आवश्यक है"),
-        EligibilityRule("PM_UJJWALA_027", "annual_income", "lte", "100000",
-            "BPL family (income below ₹1 lakh)", "BPL परिवार (₹1 लाख से कम आय)"),
+        EligibilityRule(schemeId="PM_UJJWALA_027", field="gender", operator="eq", value="F",
+            labelEn="Must be a woman", labelHi="महिला होना आवश्यक है"),
+        EligibilityRule(schemeId="PM_UJJWALA_027", field="annual_income", operator="lte", value="100000",
+            labelEn="BPL family (income below ₹1 lakh)", labelHi="BPL परिवार (₹1 लाख से कम आय)"),
 
         // Sukanya Samriddhi — girl below 10
-        EligibilityRule("SUKANYA_SAMRIDDHI_022", "gender", "eq", "F",
-            "Girl child only", "केवल बालिका"),
-        EligibilityRule("SUKANYA_SAMRIDDHI_022", "age", "lt", "10",
-            "Child below 10 years of age", "10 वर्ष से कम आयु का बच्चा"),
+        EligibilityRule(schemeId="SUKANYA_SAMRIDDHI_022", field="gender", operator="eq", value="F",
+            labelEn="Girl child only", labelHi="केवल बालिका"),
+        EligibilityRule(schemeId="SUKANYA_SAMRIDDHI_022", field="age", operator="lt", value="10",
+            labelEn="Child below 10 years of age", labelHi="10 वर्ष से कम आयु का बच्चा"),
 
         // MUDRA — non-farm micro enterprise
-        EligibilityRule("MUDRA_LOAN_016", "annual_income", "lte", "1000000",
-            "Non-corporate, non-farm business", "गैर-कॉर्पोरेट, गैर-कृषि व्यवसाय"),
+        EligibilityRule(schemeId="MUDRA_LOAN_016", field="annual_income", operator="lte", value="1000000",
+            labelEn="Non-corporate, non-farm business", labelHi="गैर-कॉर्पोरेट, गैर-कृषि व्यवसाय"),
 
         // PM Suraksha Bima — age 18–70 with bank account
-        EligibilityRule("PM_SURAKSHA_BIMA_013", "age", "gte", "18",
-            "Age 18 or above", "18 वर्ष या उससे अधिक"),
-        EligibilityRule("PM_SURAKSHA_BIMA_013", "age", "lte", "70",
-            "Age 70 or below", "70 वर्ष या उससे कम"),
+        EligibilityRule(schemeId="PM_SURAKSHA_BIMA_013", field="age", operator="gte", value="18",
+            labelEn="Age 18 or above", labelHi="18 वर्ष या उससे अधिक"),
+        EligibilityRule(schemeId="PM_SURAKSHA_BIMA_013", field="age", operator="lte", value="70",
+            labelEn="Age 70 or below", labelHi="70 वर्ष या उससे कम"),
 
         // Atal Pension — age 18–40, unorganised sector
-        EligibilityRule("ATAL_PENSION_017", "age", "gte", "18",
-            "Age 18 or above", "18 वर्ष या उससे अधिक"),
-        EligibilityRule("ATAL_PENSION_017", "age", "lte", "40",
-            "Age 40 or below (to join)", "40 वर्ष या उससे कम (जुड़ने के लिए)"),
+        EligibilityRule(schemeId="ATAL_PENSION_017", field="age", operator="gte", value="18",
+            labelEn="Age 18 or above", labelHi="18 वर्ष या उससे अधिक"),
+        EligibilityRule(schemeId="ATAL_PENSION_017", field="age", operator="lte", value="40",
+            labelEn="Age 40 or below (to join)", labelHi="40 वर्ष या उससे कम (जुड़ने के लिए)"),
 
         // PMAY Gramin — BPL family
-        EligibilityRule("PMAY_GRAMIN_005", "annual_income", "lte", "100000",
-            "BPL family income", "BPL पारिवारिक आय"),
+        EligibilityRule(schemeId="PMAY_GRAMIN_005", field="annual_income", operator="lte", value="100000",
+            labelEn="BPL family income", labelHi="BPL पारिवारिक आय"),
 
         // NSP SC Scholarship
-        EligibilityRule("NSP_SC_SCHOLARSHIP_007", "category", "eq", "SC",
-            "Must belong to SC category", "SC वर्ग से होना आवश्यक"),
-        EligibilityRule("NSP_SC_SCHOLARSHIP_007", "annual_income", "lte", "250000",
-            "Annual parental income up to ₹2.5 lakh", "माता-पिता की वार्षिक आय ₹2.5 लाख तक"),
+        EligibilityRule(schemeId="NSP_SC_SCHOLARSHIP_007", field="category", operator="eq", value="SC",
+            labelEn="Must belong to SC category", labelHi="SC वर्ग से होना आवश्यक"),
+        EligibilityRule(schemeId="NSP_SC_SCHOLARSHIP_007", field="annual_income", operator="lte", value="250000",
+            labelEn="Annual parental income up to ₹2.5 lakh", labelHi="माता-पिता की वार्षिक आय ₹2.5 लाख तक"),
 
         // NSP ST Scholarship
-        EligibilityRule("NSP_ST_SCHOLARSHIP_008", "category", "eq", "ST",
-            "Must belong to ST category", "ST वर्ग से होना आवश्यक"),
-        EligibilityRule("NSP_ST_SCHOLARSHIP_008", "annual_income", "lte", "250000",
-            "Annual parental income up to ₹2.5 lakh", "माता-पिता की वार्षिक आय ₹2.5 लाख तक"),
+        EligibilityRule(schemeId="NSP_ST_SCHOLARSHIP_008", field="category", operator="eq", value="ST",
+            labelEn="Must belong to ST category", labelHi="ST वर्ग से होना आवश्यक"),
+        EligibilityRule(schemeId="NSP_ST_SCHOLARSHIP_008", field="annual_income", operator="lte", value="250000",
+            labelEn="Annual parental income up to ₹2.5 lakh", labelHi="माता-पिता की वार्षिक आय ₹2.5 लाख तक"),
 
         // UP Kanya Sumangala
-        EligibilityRule("UP_KANYA_SUMANGALA_040", "state", "eq", "UP",
-            "Must be a resident of Uttar Pradesh", "उत्तर प्रदेश का निवासी होना आवश्यक"),
-        EligibilityRule("UP_KANYA_SUMANGALA_040", "gender", "eq", "F",
-            "Girl child only", "केवल बालिका"),
-        EligibilityRule("UP_KANYA_SUMANGALA_040", "annual_income", "lte", "300000",
-            "Family income up to ₹3 lakh/year", "पारिवारिक आय ₹3 लाख/वर्ष तक"),
+        EligibilityRule(schemeId="UP_KANYA_SUMANGALA_040", field="state", operator="eq", value="UP",
+            labelEn="Must be a resident of Uttar Pradesh", labelHi="उत्तर प्रदेश का निवासी होना आवश्यक"),
+        EligibilityRule(schemeId="UP_KANYA_SUMANGALA_040", field="gender", operator="eq", value="F",
+            labelEn="Girl child only", labelHi="केवल बालिका"),
+        EligibilityRule(schemeId="UP_KANYA_SUMANGALA_040", field="annual_income", operator="lte", value="300000",
+            labelEn="Family income up to ₹3 lakh/year", labelHi="पारिवारिक आय ₹3 लाख/वर्ष तक"),
 
         // MH Ladki Bahin
-        EligibilityRule("MH_LADKI_BAHIN_041", "state", "eq", "MH",
-            "Must be a resident of Maharashtra", "महाराष्ट्र का निवासी होना आवश्यक"),
-        EligibilityRule("MH_LADKI_BAHIN_041", "gender", "eq", "F",
-            "Women only", "केवल महिलाएं"),
-        EligibilityRule("MH_LADKI_BAHIN_041", "age", "gte", "21",
-            "Age 21 or above", "21 वर्ष या उससे अधिक"),
-        EligibilityRule("MH_LADKI_BAHIN_041", "age", "lte", "65",
-            "Age 65 or below", "65 वर्ष या उससे कम"),
-        EligibilityRule("MH_LADKI_BAHIN_041", "annual_income", "lte", "250000",
-            "Family income up to ₹2.5 lakh/year", "पारिवारिक आय ₹2.5 लाख/वर्ष तक"),
+        EligibilityRule(schemeId="MH_LADKI_BAHIN_041", field="state", operator="eq", value="MH",
+            labelEn="Must be a resident of Maharashtra", labelHi="महाराष्ट्र का निवासी होना आवश्यक"),
+        EligibilityRule(schemeId="MH_LADKI_BAHIN_041", field="gender", operator="eq", value="F",
+            labelEn="Women only", labelHi="केवल महिलाएं"),
+        EligibilityRule(schemeId="MH_LADKI_BAHIN_041", field="age", operator="gte", value="21",
+            labelEn="Age 21 or above", labelHi="21 वर्ष या उससे अधिक"),
+        EligibilityRule(schemeId="MH_LADKI_BAHIN_041", field="age", operator="lte", value="65",
+            labelEn="Age 65 or below", labelHi="65 वर्ष या उससे कम"),
+        EligibilityRule(schemeId="MH_LADKI_BAHIN_041", field="annual_income", operator="lte", value="250000",
+            labelEn="Family income up to ₹2.5 lakh/year", labelHi="पारिवारिक आय ₹2.5 लाख/वर्ष तक"),
 
         // KCC — farmer with cultivable land
-        EligibilityRule("KISAN_CREDIT_CARD_003", "land_hectares", "gt", "0",
-            "Must own or lease cultivable land", "कृषि योग्य भूमि होना आवश्यक"),
+        EligibilityRule(schemeId="KISAN_CREDIT_CARD_003", field="land_hectares", operator="gt", value="0",
+            labelEn="Must own or lease cultivable land", labelHi="कृषि योग्य भूमि होना आवश्यक"),
 
         // Van Dhan — ST community members
-        EligibilityRule("VAN_DHAN_VIKAS_025", "category", "eq", "ST",
-            "Must belong to ST category", "ST वर्ग से होना आवश्यक"),
+        EligibilityRule(schemeId="VAN_DHAN_VIKAS_025", field="category", operator="eq", value="ST",
+            labelEn="Must belong to ST category", labelHi="ST वर्ग से होना आवश्यक"),
 
         // ESIC — employees earning up to ₹21,000/month
-        EligibilityRule("ESIC_INSURANCE_035", "annual_income", "lte", "252000",
-            "Monthly income up to ₹21,000", "मासिक आय ₹21,000 तक"),
+        EligibilityRule(schemeId="ESIC_INSURANCE_035", field="annual_income", operator="lte", value="252000",
+            labelEn="Monthly income up to ₹21,000", labelHi="मासिक आय ₹21,000 तक"),
 
         // Matritva Vandana — first child, pregnant woman
-        EligibilityRule("MATRITVA_VANDANA_023", "gender", "eq", "F",
-            "Pregnant/lactating woman only", "गर्भवती/स्तनपान कराने वाली महिला"),
+        EligibilityRule(schemeId="MATRITVA_VANDANA_023", field="gender", operator="eq", value="F",
+            labelEn="Pregnant/lactating woman only", labelHi="गर्भवती/स्तनपान कराने वाली महिला"),
 
         // IGNOAPS — senior citizen BPL
-        EligibilityRule("IGNOAPS_030", "age", "gte", "60",
-            "Age 60 or above", "60 वर्ष या उससे अधिक"),
-        EligibilityRule("IGNOAPS_030", "annual_income", "lte", "100000",
-            "BPL family", "BPL परिवार"),
+        EligibilityRule(schemeId="IGNOAPS_030", field="age", operator="gte", value="60",
+            labelEn="Age 60 or above", labelHi="60 वर्ष या उससे अधिक"),
+        EligibilityRule(schemeId="IGNOAPS_030", field="annual_income", operator="lte", value="100000",
+            labelEn="BPL family", labelHi="BPL परिवार"),
 
         // RJ Chiranjeevi — Rajasthan residents
-        EligibilityRule("RJ_CHIRANJEEVI_042", "state", "eq", "RJ",
-            "Must be a resident of Rajasthan", "राजस्थान का निवासी होना आवश्यक"),
+        EligibilityRule(schemeId="RJ_CHIRANJEEVI_042", field="state", operator="eq", value="RJ",
+            labelEn="Must be a resident of Rajasthan", labelHi="राजस्थान का निवासी होना आवश्यक"),
 
         // GJ Namo Saraswati — Gujarat girl students
-        EligibilityRule("GJ_NAMO_SARASWATI_046", "state", "eq", "GJ",
-            "Must be a resident of Gujarat", "गुजरात का निवासी होना आवश्यक"),
-        EligibilityRule("GJ_NAMO_SARASWATI_046", "gender", "eq", "F",
-            "Girl student only", "केवल छात्रा"),
-        EligibilityRule("GJ_NAMO_SARASWATI_046", "annual_income", "lte", "200000",
-            "Family income up to ₹2 lakh/year", "पारिवारिक आय ₹2 लाख/वर्ष तक")
+        EligibilityRule(schemeId="GJ_NAMO_SARASWATI_046", field="state", operator="eq", value="GJ",
+            labelEn="Must be a resident of Gujarat", labelHi="गुजरात का निवासी होना आवश्यक"),
+        EligibilityRule(schemeId="GJ_NAMO_SARASWATI_046", field="gender", operator="eq", value="F",
+            labelEn="Girl student only", labelHi="केवल छात्रा"),
+        EligibilityRule(schemeId="GJ_NAMO_SARASWATI_046", field="annual_income", operator="lte", value="200000",
+            labelEn="Family income up to ₹2 lakh/year", labelHi="पारिवारिक आय ₹2 लाख/वर्ष तक")
     )
 
     // ─────────────────────────────────────────────────────────────────────────────
