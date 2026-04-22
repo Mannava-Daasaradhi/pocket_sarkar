@@ -1,19 +1,37 @@
 package com.pocketsarkar
 
 import android.app.Application
+import com.pocketsarkar.db.DatabaseSeeder
+import com.pocketsarkar.db.PocketSarkarDatabase
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * Application class — Hilt entry point.
- * Also the right place to initialise crash reporting, analytics (none for us — privacy first),
- * and any app-wide singletons that aren't injected.
+ * Seeds the scheme database on first launch.
  */
 @HiltAndroidApp
 class PocketSarkarApp : Application() {
 
+    // App-scoped coroutine scope (lives as long as the process)
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    @Inject
+    lateinit var database: PocketSarkarDatabase
+
     override fun onCreate() {
         super.onCreate()
-        // Nothing here yet. Model loading is lazy (not at startup).
-        // DB is initialised by Hilt via AppModule.
+
+        // Seed DB in background — does nothing after first run (idempotent)
+        appScope.launch {
+            DatabaseSeeder.seedIfNeeded(
+                context = applicationContext,
+                dao = database.schemeDao()
+            )
+        }
     }
 }

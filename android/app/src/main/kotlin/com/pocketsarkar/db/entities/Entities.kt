@@ -43,6 +43,9 @@ data class Scheme(
 @Fts5(contentEntity = Scheme::class)
 @Entity(tableName = "schemes_fts")
 data class SchemeFts(
+    // Room requires a rowid column for FTS content tables.
+    // It MUST be named "rowid" and annotated @PrimaryKey — do not rename.
+    @PrimaryKey @ColumnInfo(name = "rowid") val rowId: Int = 0,
     val nameEn: String,
     val nameHi: String,
     val descriptionEn: String,
