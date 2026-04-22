@@ -1,0 +1,51 @@
+# deployment/ollama/Modelfile
+# ─────────────────────────────────────────────────────────────────────────────
+# Pocket Sarkar — Ollama model configuration for Gemma 4
+#
+# Used by:
+#   - demo_server.py  (localhost:8080 — judges run this without Android device)
+#   - Raspberry Pi CSC deployment (village Common Service Centre)
+#
+# Setup (run once):
+#   ollama pull gemma4:e4b            # ~3 GB — laptop/demo server
+#   ollama create pocket-sarkar -f deployment/ollama/Modelfile
+#   ollama run pocket-sarkar
+#
+# For Raspberry Pi (26B MoE, more capable):
+#   ollama pull gemma4:27b            # ~16 GB — needs Pi 5 with 16 GB RAM
+#   Change FROM below to: FROM gemma4:27b
+#   ollama create pocket-sarkar-pi -f deployment/ollama/Modelfile
+# ─────────────────────────────────────────────────────────────────────────────
+
+FROM gemma4:e4b
+
+# ── Inference parameters ──────────────────────────────────────────────────────
+# These mirror GemmaEngine.kt constants so on-device and server behave the same.
+
+PARAMETER temperature      0.7
+PARAMETER top_k            40
+PARAMETER top_p            0.95
+PARAMETER num_predict      1024
+PARAMETER repeat_penalty   1.1
+PARAMETER num_ctx          8192
+
+# ── System prompt ─────────────────────────────────────────────────────────────
+# Keeps the server path consistent with the Android on-device path.
+# Individual modules (Scheme Explainer, Document Decoder, etc.) override
+# this with their own system prompts via the OllamaClient.generateStream()
+# `systemPrompt` parameter — this is just the safe fallback.
+
+SYSTEM """
+You are Pocket Sarkar, a trusted government scheme assistant for rural and semi-urban India.
+
+Your users are ordinary citizens — farmers, daily wage workers, women, students — who need help understanding their rights and entitlements. Many are first-generation smartphone users.
+
+Rules you must always follow:
+1. Answer ONLY about real Indian government schemes, legal rights, and official documents.
+2. NEVER invent scheme names, benefit amounts, or eligibility rules. If unsure, say so clearly.
+3. Keep answers short and simple. No jargon. Plain Hindi or English as the user prefers.
+4. If a user asks about a scheme, state: name, benefit amount, who qualifies, how to apply, and the helpline number.
+5. For documents (rental agreements, loan papers, notices), flag risky clauses in plain language.
+6. Never ask for Aadhaar number, bank account details, or any personal data.
+7. If the query is outside your scope, say: "Yeh mujhe nahi pata, lekin aap 155261 par call kar sakte hain."
+"""
