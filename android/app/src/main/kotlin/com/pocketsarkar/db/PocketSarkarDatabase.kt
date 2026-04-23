@@ -37,14 +37,36 @@ abstract class PocketSarkarDatabase : RoomDatabase() {
          */
         val ON_CREATE_CALLBACK = object : Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
+                // 1. Create a standalone FTS5 table for Robolectric tests
                 db.execSQL("""
+                    CREATE VIRTUAL TABLE IF NOT EXISTS schemes_fts USING fts5(
+                        nameEn, nameHi, descriptionEn, descriptionHi, category, benefitType
+                    )
+                """.trimIndent())
+                
+                // 2. Use a trigger to auto-populate FTS5 during tests to avoid the Robolectric rebuild bug
+                db.execSQL("""
+                    CREATE TRIGGER IF NOT EXISTS schemes_fts_insert AFTER INSERT ON schemes BEGIN
+                        INSERT INTO schemes_fts(rowid, nameEn, nameHi, descriptionEn, descriptionHi, category, benefitType)
+                        VALUES (new.rowid, new.nameEn, new.nameHi, new.descriptionEn, new.descriptionHi, new.category, new.benefitType);
+                    END;
+                """.trimIndent())
+            }
+        }
+
+            // 2. Used by the local unit tests (Bundled SQLite Driver)
+            override fun onCreate(connection: androidx.sqlite.SQLiteConnection) {
+                val createStmt = connection.prepare("""
                     CREATE VIRTUAL TABLE IF NOT EXISTS schemes_fts USING fts5(
                         nameEn, nameHi, descriptionEn, descriptionHi, category, benefitType,
                         content='schemes',
                         content_rowid='rowid'
                     )
                 """.trimIndent())
-                db.execSQL("INSERT INTO schemes_fts(schemes_fts) VALUES('rebuild')")
+                try { createStmt.step() } finally { createStmt.close() }
+
+                val rebuildStmt = connection.prepare("INSERT INTO schemes_fts(schemes_fts) VALUES('rebuild')")
+                try { rebuildStmt.step() } finally { rebuildStmt.close() }
             }
         }
 

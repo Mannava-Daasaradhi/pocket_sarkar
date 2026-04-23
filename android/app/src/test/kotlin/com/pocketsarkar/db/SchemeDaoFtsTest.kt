@@ -17,6 +17,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import androidx.sqlite.driver.jdbc.SQLiteDriver
 
 /**
  * Phase-2 DAO tests — Robolectric with sqliteMode=NATIVE (robolectric.properties).
@@ -43,7 +44,8 @@ class SchemeDaoFtsTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         db = Room.inMemoryDatabaseBuilder(context, PocketSarkarDatabase::class.java)
             .allowMainThreadQueries()
-            .openHelperFactory(FrameworkSQLiteOpenHelperFactory())
+            // Use the JVM JDBC Driver for desktop tests
+            .setDriver(SQLiteDriver()) 
             .addCallback(PocketSarkarDatabase.ON_CREATE_CALLBACK)
             .build()
     }

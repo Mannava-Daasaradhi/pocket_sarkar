@@ -3,7 +3,8 @@
 import com.pocketsarkar.db.dao.SchemeDao
 import com.pocketsarkar.db.entities.EligibilityRule
 import com.pocketsarkar.db.entities.Scheme
-import org.json.JSONArray
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import javax.inject.Inject
 
 /**
@@ -119,11 +120,12 @@ fun flatFieldsMatch(scheme: Scheme, profile: UserProfile): Boolean {
 }
 
 /** Parse JSON caste array safely. Returns empty list on any parse error. */
+/** Parse JSON caste array safely. Returns empty list on any parse error. */
 fun parseCasteArray(json: String): List<String> {
     if (json.isBlank() || json == "[]") return emptyList()
     return try {
-        val arr = JSONArray(json)
-        (0 until arr.length()).map { arr.getString(it) }
+        val type = object : TypeToken<List<String>>() {}.type
+        Gson().fromJson(json, type)
     } catch (e: Exception) {
         emptyList()
     }
