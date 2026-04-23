@@ -2,6 +2,7 @@ package com.pocketsarkar.db
 
 import android.content.Context
 import androidx.room.Room
+import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.core.app.ApplicationProvider
 import com.pocketsarkar.db.entities.EligibilityRule
 import com.pocketsarkar.db.entities.Scheme
@@ -29,14 +30,14 @@ import org.robolectric.annotation.Config
  * own native SQLite via sqliteMode=NATIVE.
  *
  * Covers:
- *  - FTS search: "PM Kisan" → ≥1 result
- *  - FTS search: "kisan"    → ≥1 result
- *  - FTS search: "zzznomatch" → empty
- *  - getByCategory
- *  - getEligibleSchemes SQL filter (income, age, gender, state)
- *  - getSchemeById
- *  - getStaleSchemes
- *  - confidenceScore decay: 0.01 per week, floor 0.0
+ * - FTS search: "PM Kisan" → ≥1 result
+ * - FTS search: "kisan"    → ≥1 result
+ * - FTS search: "zzznomatch" → empty
+ * - getByCategory
+ * - getEligibleSchemes SQL filter (income, age, gender, state)
+ * - getSchemeById
+ * - getStaleSchemes
+ * - confidenceScore decay: 0.01 per week, floor 0.0
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -49,6 +50,7 @@ class SchemeDaoFtsTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         db = Room.inMemoryDatabaseBuilder(context, PocketSarkarDatabase::class.java)
             .allowMainThreadQueries()
+            .openHelperFactory(FrameworkSQLiteOpenHelperFactory()) // <-- Added Factory for Room 2.7+ compatibility
             .addCallback(PocketSarkarDatabase.ON_CREATE_CALLBACK)
             .build()
     }

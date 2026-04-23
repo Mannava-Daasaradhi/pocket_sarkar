@@ -10,7 +10,7 @@ normalises them, and outputs:
   data/processed/eligibility_rules.json
   data/processed/helplines.json
   data/processed/stats.txt
-  data/schemes/sqlite/pocket_sarkar.db   ← SQLite with FTS5 rebuild
+  data/schemes/sqlite/pocket_sarkar.db   ← SQLite with FTS4 rebuild
 
 Usage:
     python3 scripts/build_db/build_db.py
@@ -170,13 +170,11 @@ def build_sqlite(db_path: Path, schemes: list, rules: list, helplines: list) -> 
         )
     """)
 
-    # FTS5 virtual table — content_rowid=rowid is required so that
-    # 'INSERT INTO schemes_fts(schemes_fts) VALUES(\'rebuild\')' works correctly.
+    # FTS4 virtual table — explicitly defining the FTS4 usage.
     cur.execute("""
-        CREATE VIRTUAL TABLE IF NOT EXISTS schemes_fts USING fts5(
+        CREATE VIRTUAL TABLE IF NOT EXISTS schemes_fts USING fts4(
             nameEn, nameHi, descriptionEn, descriptionHi, category, benefitType,
-            content='schemes',
-            content_rowid='rowid'
+            content='schemes'
         )
     """)
 

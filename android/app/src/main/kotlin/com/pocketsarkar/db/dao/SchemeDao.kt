@@ -11,14 +11,13 @@ interface SchemeDao {
 
     // ── Reads ─────────────────────────────────────────────────────────────────
 
-    /** Full-text search via FTS5 – used by Scheme Explainer */
+    /** Full-text search via FTS4 – used by Scheme Explainer */
     @SkipQueryVerification
     @Query("""
         SELECT s.* FROM schemes s
         JOIN schemes_fts fts ON s.rowid = fts.rowid
         WHERE schemes_fts MATCH :query
         AND s.isActive = 1
-        ORDER BY rank
         LIMIT :limit
     """)
     suspend fun searchSchemes(query: String, limit: Int = 10): List<Scheme>
@@ -33,7 +32,6 @@ interface SchemeDao {
         JOIN schemes_fts fts ON s.rowid = fts.rowid
         WHERE schemes_fts MATCH :query
         AND s.isActive = 1
-        ORDER BY rank
         LIMIT 20
     """)
     suspend fun searchByFTS(query: String): List<Scheme>
@@ -65,12 +63,12 @@ interface SchemeDao {
      * SQL-level eligibility filter — Phase 2 requirement.
      *
      * Filters schemes where:
-     *   - state matches (targetStates = 'ALL' OR contains :state)
-     *   - gender matches (targetGender = 'ALL' OR = :gender)
-     *   - No income-lte rule requires income < user's income
-     *     (:incomeLPA is in Lakhs Per Annum; rules store rupees)
-     *   - No age-lte rule requires age < user's age
-     *   - No age-gte rule requires age > user's age
+     * - state matches (targetStates = 'ALL' OR contains :state)
+     * - gender matches (targetGender = 'ALL' OR = :gender)
+     * - No income-lte rule requires income < user's income
+     * (:incomeLPA is in Lakhs Per Annum; rules store rupees)
+     * - No age-lte rule requires age < user's age
+     * - No age-gte rule requires age > user's age
      */
     @Query("""
         SELECT DISTINCT s.* FROM schemes s

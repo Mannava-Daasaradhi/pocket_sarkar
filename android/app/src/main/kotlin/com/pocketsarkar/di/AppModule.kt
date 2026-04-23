@@ -2,7 +2,7 @@ package com.pocketsarkar.di
 
 import android.content.Context
 import androidx.room.Room
-import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import com.pocketsarkar.db.PocketSarkarDatabase
 import dagger.Module
 import dagger.Provides
@@ -25,11 +25,9 @@ object AppModule {
             PocketSarkarDatabase::class.java,
             "pocket_sarkar.db"
         )
-            // BundledSQLiteDriver ships its own modern SQLite with FTS5 compiled in.
-            // This is the official Google replacement for requery/sqlite-android.
-            // Required on Samsung One UI and other OEMs that strip FTS5 from the
-            // system SQLite. Available on Google Maven — no JitPack needed.
-            .setDriver(BundledSQLiteDriver())
+            // Explicitly define the framework factory for SupportSQLiteDatabase compatibility
+            .openHelperFactory(FrameworkSQLiteOpenHelperFactory())
+            // Removed .setDriver(BundledSQLiteDriver()) to resolve the Room 2.7.0 conflict
             .addCallback(PocketSarkarDatabase.ON_CREATE_CALLBACK)
             .addMigrations(PocketSarkarDatabase.MIGRATION_1_2)
             .fallbackToDestructiveMigration(dropAllTables = true)
