@@ -18,7 +18,7 @@ room                    = "2.6.1"
 
 # Requery bundled SQLite — ships FTS5 on ALL OEMs including Samsung One UI
 # which strips FTS5 from the system SQLite.
-requeryAndroid          = "3.45.3"
+requeryAndroid          = "3.45.0"
 
 # DI
 hilt                    = "2.51.1"
@@ -72,8 +72,10 @@ room-runtime                        = { group = "androidx.room", name = "room-ru
 room-ktx                            = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler                       = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 
-# Requery bundled SQLite — required for FTS5 on Samsung/OEM devices
-requery-android                     = { group = "com.github.requery", name = "sqlite-android", version.ref = "requeryAndroid" }
+# Requery bundled SQLite — official Maven Central release (io.requery group)
+# Published at: https://central.sonatype.com/artifact/io.requery/sqlite-android
+# Ships FTS5 on ALL OEMs including Samsung One UI which strips FTS5 from system SQLite.
+requery-android                     = { group = "io.requery", name = "sqlite-android", version.ref = "requeryAndroid" }
 
 # Hilt
 hilt-android                        = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
