@@ -2,13 +2,13 @@ package com.pocketsarkar.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.pocketsarkar.db.PocketSarkarDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import io.requery.android.database.sqlite.RequerySQLiteOpenHelperFactory
 import javax.inject.Singleton
 
 @Module
@@ -25,10 +25,11 @@ object AppModule {
             PocketSarkarDatabase::class.java,
             "pocket_sarkar.db"
         )
-            // RequerySQLiteOpenHelperFactory bundles its own modern SQLite (3.45+)
-            // which ships with FTS5 support on ALL Android versions/OEMs including
-            // Samsung One UI which strips FTS5 from the system SQLite.
-            .openHelperFactory(RequerySQLiteOpenHelperFactory())
+            // BundledSQLiteDriver ships its own modern SQLite with FTS5 compiled in.
+            // This is the official Google replacement for requery/sqlite-android.
+            // Required on Samsung One UI and other OEMs that strip FTS5 from the
+            // system SQLite. Available on Google Maven — no JitPack needed.
+            .setDriver(BundledSQLiteDriver())
             .addCallback(PocketSarkarDatabase.ON_CREATE_CALLBACK)
             .addMigrations(PocketSarkarDatabase.MIGRATION_1_2)
             .fallbackToDestructiveMigration()
