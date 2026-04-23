@@ -19,20 +19,13 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Phase-2 unit tests for SchemeDao.
- *
- * Uses Robolectric sqliteMode=NATIVE (set in robolectric.properties).
+ * Phase-2 DAO tests — Robolectric with sqliteMode=NATIVE (robolectric.properties).
  * Robolectric 4.13 ships SQLite 3.44+ with FTS5 on all platforms including Windows.
  *
- * androidx.sqlite:sqlite-bundled is intentionally excluded from the test classpath
- * in build.gradle.kts — its native .so/.dll cannot load under a JVM (Robolectric)
- * test runner. Production builds use BundledSQLiteDriver; tests use Robolectric's
- * own native SQLite via sqliteMode=NATIVE.
- *
  * Covers:
- * - FTS search: "PM Kisan" → ≥1 result
- * - FTS search: "kisan"    → ≥1 result
- * - FTS search: "zzznomatch" → empty
+ * - FTS5 search: "PM Kisan" → ≥1 result
+ * - FTS5 search: "kisan"    → ≥1 result
+ * - FTS5 search: "zzznomatch" → empty
  * - getByCategory
  * - getEligibleSchemes SQL filter (income, age, gender, state)
  * - getSchemeById
@@ -50,7 +43,7 @@ class SchemeDaoFtsTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         db = Room.inMemoryDatabaseBuilder(context, PocketSarkarDatabase::class.java)
             .allowMainThreadQueries()
-            .openHelperFactory(FrameworkSQLiteOpenHelperFactory()) // <-- Added Factory for Room 2.7+ compatibility
+            .openHelperFactory(FrameworkSQLiteOpenHelperFactory())
             .addCallback(PocketSarkarDatabase.ON_CREATE_CALLBACK)
             .build()
     }
@@ -67,7 +60,7 @@ class SchemeDaoFtsTest {
         category: String = "general",
         state: String = "ALL",
         gender: String = "ALL",
-        confidenceScore: Float = 1.0f,
+        confidenceScore: Double = 1.0,           // Double — matches Scheme entity
         lastVerifiedEpoch: Long = System.currentTimeMillis(),
         descriptionEn: String = "Description for $nameEn",
     ) = Scheme(
@@ -96,7 +89,7 @@ class SchemeDaoFtsTest {
     // ── FTS Tests ─────────────────────────────────────────────────────────────
 
     @Test
-    fun fts_pmKisan_returnsExactlyOneResult() = runBlocking {
+    fun fts_pmKisan_returnsAtLeastOneResult() = runBlocking {
         insertAndRebuildFts(listOf(
             scheme("PM_KISAN_001", "PM Kisan Samman Nidhi",
                 descriptionEn = "Direct income support for farmers up to 2 hectares"),
@@ -226,7 +219,7 @@ class SchemeDaoFtsTest {
             EligibilityRule(schemeId = "YOUTH_SCHEME", field = "age", operator = "gte", value = "18",
                 labelEn = "Age 18 or above", labelHi = "18 वर्ष या अधिक")
         ))
-        assertTrue("Age 25 qualifies (18-35)",
+        assertTrue("Age 25 qualifies (18–35)",
             db.schemeDao().getEligibleSchemes("ALL", 5.0, 25, "ALL").any { it.id == "YOUTH_SCHEME" })
         assertFalse("Age 50 too old",
             db.schemeDao().getEligibleSchemes("ALL", 5.0, 50, "ALL").any { it.id == "YOUTH_SCHEME" })
@@ -239,14 +232,14 @@ class SchemeDaoFtsTest {
     @Test
     fun getStaleSchemes_returnsOnlyBelowThreshold() = runBlocking {
         db.schemeDao().insertSchemes(listOf(
-            scheme("FRESH",  "Fresh Scheme",   confidenceScore = 1.0f),
-            scheme("STALE1", "Stale Scheme 1", confidenceScore = 0.4f),
-            scheme("STALE2", "Stale Scheme 2", confidenceScore = 0.59f),
-            scheme("BORDER", "Border Scheme",  confidenceScore = 0.6f),
+            scheme("FRESH",  "Fresh Scheme",   confidenceScore = 1.0),
+            scheme("STALE1", "Stale Scheme 1", confidenceScore = 0.4),
+            scheme("STALE2", "Stale Scheme 2", confidenceScore = 0.59),
+            scheme("BORDER", "Border Scheme",  confidenceScore = 0.6),
         ))
         val stale = db.schemeDao().getStaleSchemes(threshold = 0.6)
         assertEquals("Exactly 2 stale schemes", 2, stale.size)
-        assertTrue(stale.all { it.confidenceScore < 0.6f })
+        assertTrue(stale.all { it.confidenceScore < 0.6 })   // Double comparison
         assertTrue(stale.any { it.id == "STALE1" })
         assertTrue(stale.any { it.id == "STALE2" })
         assertFalse("0.6 exactly is NOT stale", stale.any { it.id == "BORDER" })
@@ -257,35 +250,35 @@ class SchemeDaoFtsTest {
     @Test
     fun confidenceDecay_1percentPerWeek() {
         val now = System.currentTimeMillis()
-        val decayed = computeDecayedScore(1.0f, now - MS_PER_WEEK, now)
-        assertEquals("Decay 0.01 after 1 week", 0.99f, decayed, 0.001f)
+        val decayed = computeDecayedScore(1.0, now - MS_PER_WEEK, now)
+        assertEquals("Decay 0.01 after 1 week", 0.99, decayed, 0.001)
     }
 
     @Test
     fun confidenceDecay_flooredAtZero() {
         val now = System.currentTimeMillis()
-        val decayed = computeDecayedScore(1.0f, now - (200 * MS_PER_WEEK), now)
-        assertEquals("Floor at 0.0", 0.0f, decayed, 0.001f)
+        val decayed = computeDecayedScore(1.0, now - (200 * MS_PER_WEEK), now)
+        assertEquals("Floor at 0.0", 0.0, decayed, 0.001)
     }
 
     @Test
     fun confidenceDecay_freshSchemeIsNotStale() {
         val now = System.currentTimeMillis()
-        val decayed = computeDecayedScore(1.0f, now, now)
+        val decayed = computeDecayedScore(1.0, now, now)
         assertTrue("Just-verified scheme not stale (score=$decayed)", decayed >= STALE_THRESHOLD)
     }
 
     @Test
     fun confidenceDecay_after50WeeksIsStale() {
         val now = System.currentTimeMillis()
-        val decayed = computeDecayedScore(1.0f, now - (50 * MS_PER_WEEK), now)
+        val decayed = computeDecayedScore(1.0, now - (50 * MS_PER_WEEK), now)
         assertTrue("After 50 weeks score=$decayed < $STALE_THRESHOLD", decayed < STALE_THRESHOLD)
     }
 
     @Test
     fun confidenceDecay_exactlyAtThresholdAfter40Weeks() {
         val now = System.currentTimeMillis()
-        val decayed = computeDecayedScore(1.0f, now - (40 * MS_PER_WEEK), now)
+        val decayed = computeDecayedScore(1.0, now - (40 * MS_PER_WEEK), now)
         // 1.0 - (0.01 * 40) = 0.60 — at threshold, NOT stale
         assertTrue("At 40 weeks score=$decayed should be >= $STALE_THRESHOLD", decayed >= STALE_THRESHOLD)
     }

@@ -42,10 +42,7 @@ object DatabaseSeeder {
 
         // BUG 4 FIX: FTS table is created before seeding (ON_CREATE_CALLBACK runs on empty DB).
         // No triggers exist to sync later inserts, so FTS must be manually populated here.
-        db?.execSQL("""
-            INSERT INTO schemes_fts(rowid, nameEn, nameHi, descriptionEn, descriptionHi, category, benefitType)
-            SELECT rowid, nameEn, nameHi, descriptionEn, descriptionHi, category, benefitType FROM schemes
-        """.trimIndent())
+        db?.execSQL("INSERT INTO schemes_fts(schemes_fts) VALUES('rebuild')")
 
         prefs.edit().putBoolean(KEY_SEEDED, true).apply()
         Log.i(TAG, "Seeded ${ALL_SCHEMES.size} schemes, ${ALL_RULES.size} rules, ${ALL_HELPLINES.size} helplines.")
@@ -73,7 +70,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://pmkisan.gov.in",
             helplineNumber = "155261",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -94,7 +91,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://pmfby.gov.in",
             helplineNumber = "1800-200-7710",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -115,7 +112,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = "1800-11-0001",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -136,7 +133,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://agriinfra.dac.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -157,7 +154,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -178,7 +175,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://pmksy.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -199,7 +196,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -220,7 +217,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://pmmsy.dof.gov.in",
             helplineNumber = "1800-425-1660",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -241,7 +238,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -262,7 +259,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://rkvy.nic.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -283,7 +280,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://pmayg.nic.in",
             helplineNumber = "1800-11-6446",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -304,7 +301,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://pmaymis.gov.in",
             helplineNumber = "1800-11-3377",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -325,7 +322,7 @@ object DatabaseSeeder {
             targetCategory = "ST",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -346,7 +343,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -367,7 +364,7 @@ object DatabaseSeeder {
             targetCategory = "SC",
             portalUrl = "https://scholarships.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -388,7 +385,7 @@ object DatabaseSeeder {
             targetCategory = "ST",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -409,7 +406,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://navodaya.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -430,7 +427,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://scholarships.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -451,7 +448,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://scholarships.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -472,7 +469,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = "1800-11-2001",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -493,7 +490,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://pmjay.gov.in",
             helplineNumber = "14555",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -514,7 +511,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = "1800-180-1104",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -535,7 +532,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://nikshay.in",
             helplineNumber = "1800-11-6666",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -556,7 +553,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -577,7 +574,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = "9152987821",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -598,7 +595,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = "1800-11-0001",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -619,7 +616,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://www.standupmitra.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -640,7 +637,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = "1800-11-0001",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -661,7 +658,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://licindia.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -682,7 +679,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -703,7 +700,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://nrega.nic.in",
             helplineNumber = "1800-111-555",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -724,7 +721,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://ddugky.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -745,7 +742,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://www.ncs.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -766,7 +763,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://aajeevika.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -787,7 +784,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -808,7 +805,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = "181",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -829,7 +826,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -850,7 +847,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -871,7 +868,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://pmmvy.wcd.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -892,7 +889,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -913,7 +910,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = "1800-266-6696",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -934,7 +931,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://mnre.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -955,7 +952,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://pmsuryaghar.gov.in",
             helplineNumber = "1800-180-3333",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -976,7 +973,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = "1800-180-3333",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -997,7 +994,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1018,7 +1015,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1039,7 +1036,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = "1800-11-2526",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1060,7 +1057,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1081,7 +1078,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://maandhan.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1102,7 +1099,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = "1916",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1123,7 +1120,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1144,7 +1141,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = "15100",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1165,7 +1162,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://tele-law.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1186,7 +1183,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1207,7 +1204,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = "1800-121-3468",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1228,7 +1225,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://digilocker.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1249,7 +1246,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://web.umang.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1270,7 +1267,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1291,7 +1288,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1312,7 +1309,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1333,7 +1330,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1354,7 +1351,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1375,7 +1372,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://smartcities.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1396,7 +1393,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://amrut.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1417,7 +1414,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://dashboard.nic.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1438,7 +1435,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://scholarships.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1459,7 +1456,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = "1800-11-0031",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1480,7 +1477,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://swavlambancard.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1501,7 +1498,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1522,7 +1519,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://apprenticeshipindia.org",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1543,7 +1540,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://jeevanpramaan.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1564,7 +1561,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1585,7 +1582,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1606,7 +1603,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://scholarships.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111850L,
             isActive = true
         ),
@@ -1627,7 +1624,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://mksy.up.gov.in",
             helplineNumber = "1800-1800-300",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -1648,7 +1645,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -1669,7 +1666,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = "18001806127",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -1690,7 +1687,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -1711,7 +1708,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -1732,7 +1729,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -1753,7 +1750,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -1774,7 +1771,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -1795,7 +1792,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -1816,7 +1813,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -1837,7 +1834,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -1858,7 +1855,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://ladlilaxmi.mp.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -1879,7 +1876,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -1900,7 +1897,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -1921,7 +1918,7 @@ object DatabaseSeeder {
             targetCategory = "ST",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -1942,7 +1939,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -1963,7 +1960,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -1984,7 +1981,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -2005,7 +2002,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -2026,7 +2023,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -2047,7 +2044,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -2068,7 +2065,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -2089,7 +2086,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -2110,7 +2107,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -2131,7 +2128,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -2152,7 +2149,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -2173,7 +2170,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -2196,7 +2193,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://jansuraksha.gov.in",
             helplineNumber = "1800-180-1111",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -2217,7 +2214,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://npscra.nsdl.co.in",
             helplineNumber = "1800-110-069",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -2238,7 +2235,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://pmmvy.nic.in",
             helplineNumber = "1800-111-555",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -2259,7 +2256,7 @@ object DatabaseSeeder {
             targetCategory = "ALL",
             portalUrl = "https://www.mudra.org.in",
             helplineNumber = "1800-180-1111",
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -2280,7 +2277,7 @@ object DatabaseSeeder {
             targetCategory = "ST",
             portalUrl = "https://trifed.tribal.gov.in",
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         ),
@@ -2301,7 +2298,7 @@ object DatabaseSeeder {
             targetCategory = "SC",
             portalUrl = null,
             helplineNumber = null,
-            confidenceScore = 1.0000f,
+            confidenceScore = 1.0000,
             lastVerifiedEpoch = 1776842111851L,
             isActive = true
         )
@@ -3174,3 +3171,4 @@ object DatabaseSeeder {
 
     )
 }
+

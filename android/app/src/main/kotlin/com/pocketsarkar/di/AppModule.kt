@@ -25,11 +25,12 @@ object AppModule {
             PocketSarkarDatabase::class.java,
             "pocket_sarkar.db"
         )
-            // Explicitly define the framework factory for SupportSQLiteDatabase compatibility
             .openHelperFactory(FrameworkSQLiteOpenHelperFactory())
-            // Removed .setDriver(BundledSQLiteDriver()) to resolve the Room 2.7.0 conflict
             .addCallback(PocketSarkarDatabase.ON_CREATE_CALLBACK)
-            .addMigrations(PocketSarkarDatabase.MIGRATION_1_2)
+            .addMigrations(
+                PocketSarkarDatabase.MIGRATION_1_2,
+                PocketSarkarDatabase.MIGRATION_2_3       // ← added
+            )
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }
