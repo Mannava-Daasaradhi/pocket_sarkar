@@ -67,6 +67,11 @@ android {
     androidResources {
         noCompress += listOf("tflite", "task", "bin")
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -135,4 +140,9 @@ dependencies {
     androidTestImplementation(libs.junit.android)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.room.testing)
+    testImplementation(libs.coroutines.test)
+
+    testImplementation(libs.androidx.test.core)
 }

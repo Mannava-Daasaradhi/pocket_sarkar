@@ -19,7 +19,7 @@ Output:
     data/processed/helplines.json
     data/processed/stats.txt
 """
-
+import sqlite3
 import argparse
 import json
 import os
@@ -223,7 +223,63 @@ def main():
     )
     with open(out_stats, "w") as f:
         f.write(stats)
+    import sqlite3
 
+    # ... [existing JSON writing code] ...
+
+    # ── Phase 2: Generate SQLite Database ─────────────────────────────────────
+    sqlite_dir = ROOT / "data" / "schemes" / "sqlite"
+    sqlite_dir.mkdir(parents=True, exist_ok=True)
+    db_path = sqlite_dir / "pocket_sarkar.db"
+    
+    # Remove old DB if exists
+    if db_path.exists():
+        db_path.unlink()
+
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Create Tables
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS schemes (
+            id TEXT PRIMARY KEY NOT NULL, nameEn TEXT NOT NULL, nameHi TEXT NOT NULL,
+            nameLocal TEXT, category TEXT NOT NULL, ministryEn TEXT NOT NULL,
+            descriptionEn TEXT NOT NULL, descriptionHi TEXT NOT NULL,
+            benefitAmount TEXT, benefitType TEXT NOT NULL, targetStates TEXT NOT NULL,
+            targetGender TEXT NOT NULL, targetCategory TEXT NOT NULL,
+            portalUrl TEXT, helplineNumber TEXT, confidenceScore REAL NOT NULL,
+            lastVerifiedEpoch INTEGER NOT NULL, isActive INTEGER NOT NULL
+        )
+    """)
+    cursor.execute("""
+        CREATE VIRTUAL TABLE IF NOT EXISTS schemes_fts USING FTS5(
+            nameEn, nameHi, descriptionEn, descriptionHi, category, benefitType, content='schemes'
+        )
+    """)
+
+    # Insert Schemes
+    for s in all_schemes:
+        cursor.execute("""
+            INSERT INTO schemes (
+                id, nameEn, nameHi, nameLocal, category, ministryEn, descriptionEn, 
+                descriptionHi, benefitAmount, benefitType, targetStates, targetGender, 
+                targetCategory, portalUrl, helplineNumber, confidenceScore, 
+                lastVerifiedEpoch, isActive
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            s["id"], s["nameEn"], s["nameHi"], s.get("nameLocal"), s["category"], s["ministryEn"],
+            s["descriptionEn"], s["descriptionHi"], s.get("benefitAmount"), s["benefitType"],
+            s["targetStates"], s["targetGender"], s["targetCategory"], s.get("portalUrl"),
+            s.get("helplineNumber"), s["confidenceScore"], s["lastVerifiedEpoch"], int(s["isActive"])
+        ))
+
+    # Safely populate FTS table
+    cursor.execute("INSERT INTO schemes_fts(schemes_fts) VALUES('rebuild')")
+
+    conn.commit()
+    conn.close()
+
+    print(f"SQLite database generated at: {db_path}")
     print("\n" + stats)
     print(f"Output written to {PROCESSED_DIR}/")
 
