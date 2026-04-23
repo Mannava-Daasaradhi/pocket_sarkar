@@ -18,7 +18,7 @@ room                    = "2.6.1"
 
 # Requery bundled SQLite — ships FTS5 on ALL OEMs including Samsung One UI
 # which strips FTS5 from the system SQLite.
-requeryAndroid          = "3.45.0"
+requeryAndroid          = "3.45.3"
 
 # DI
 hilt                    = "2.51.1"

@@ -27,7 +27,7 @@ object DatabaseSeeder {
     private const val PREFS_NAME = "pocket_sarkar_prefs"
     private const val KEY_SEEDED = "db_seeded_v101"
 
-    suspend fun seedIfNeeded(context: Context, dao: SchemeDao) = withContext(Dispatchers.IO) {
+    suspend fun seedIfNeeded(context: Context, dao: SchemeDao, db: androidx.sqlite.db.SupportSQLiteDatabase? = null) = withContext(Dispatchers.IO) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         if (prefs.getBoolean(KEY_SEEDED, false)) {
             Log.d(TAG, "DB already seeded, skipping.")
@@ -39,6 +39,13 @@ object DatabaseSeeder {
         dao.insertSchemes(ALL_SCHEMES)
         dao.insertRules(ALL_RULES)
         dao.insertHelplines(ALL_HELPLINES)
+
+        // BUG 4 FIX: FTS table is created before seeding (ON_CREATE_CALLBACK runs on empty DB).
+        // No triggers exist to sync later inserts, so FTS must be manually populated here.
+        db?.execSQL("""
+            INSERT INTO schemes_fts(rowid, nameEn, nameHi, descriptionEn, descriptionHi, category, benefitType)
+            SELECT rowid, nameEn, nameHi, descriptionEn, descriptionHi, category, benefitType FROM schemes
+        """.trimIndent())
 
         prefs.edit().putBoolean(KEY_SEEDED, true).apply()
         Log.i(TAG, "Seeded ${ALL_SCHEMES.size} schemes, ${ALL_RULES.size} rules, ${ALL_HELPLINES.size} helplines.")

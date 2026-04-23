@@ -30,7 +30,10 @@ class PocketSarkarApp : Application() {
         appScope.launch {
             DatabaseSeeder.seedIfNeeded(
                 context = applicationContext,
-                dao = database.schemeDao()
+                dao = database.schemeDao(),
+                // Pass the raw DB handle so the seeder can populate the FTS index
+                // via execSQL after inserting schemes (no triggers exist to sync it).
+                db = database.openHelper.writableDatabase
             )
         }
     }

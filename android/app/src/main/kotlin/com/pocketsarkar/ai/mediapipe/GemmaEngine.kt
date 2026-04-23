@@ -127,13 +127,9 @@ class GemmaEngine @Inject constructor(
     ): String = withContext(Dispatchers.IO) {
         val engine = llmInference
             ?: error("GemmaEngine not initialised. Call ensureLoaded() first.")
-        val session = createSession(engine)
-        try {
-            session.addQueryChunk(buildPrompt(systemPrompt, conversationHistory, userPrompt))
-            session.generateResponse()
-        } finally {
-            session.close()
-        }
+        // LlmInferenceSession.generateResponse() does NOT exist in MediaPipe 0.10.20.
+        // The sync API lives on the base LlmInference engine directly.
+        engine.generateResponse(buildPrompt(systemPrompt, conversationHistory, userPrompt))
     }
 
     // NOTE: image param is currently unused — MediaPipe 0.10.20 vision API
