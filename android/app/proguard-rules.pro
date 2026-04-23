@@ -30,3 +30,6 @@
 # ── App data classes (must survive R8) ────────────────────────────────────────
 -keep class com.pocketsarkar.db.entities.** { *; }
 -keep class com.pocketsarkar.modules.**.** { *; }
+
+# ── Requery bundled SQLite — R8 strips RequerySQLiteOpenHelperFactory in release ─
+-keep class io.requery.** { *; }

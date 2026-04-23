@@ -1,13 +1,14 @@
-﻿package com.pocketsarkar.modules.decoder
+package com.pocketsarkar.modules.decoder
 
+import android.content.Context
 import android.graphics.Bitmap
 import com.pocketsarkar.ai.mediapipe.GemmaEngine
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
-
 
 /**
  * Document Decoder module.
@@ -16,20 +17,37 @@ import javax.inject.Inject
  * 1. Receive image (camera frame, PDF page, screenshot)
  * 2. Preprocess: deskew, denoise, normalize brightness
  * 3. Pass directly to Gemma 4 vision encoder (no OCR step)
- * 4. Parse structured output â†’ DecodeResult
- * 5. If vision confidence low â†’ fallback to ML Kit OCR
+ * 4. Parse structured output -> DecodeResult
+ * 5. If vision confidence low -> fallback to ML Kit OCR
+ *
+ * Bug 6 fix: SYSTEM_PROMPT is no longer hardcoded. It is loaded from
+ * assets/ai/prompts/decoder/system_prompt.txt at runtime so that prompts
+ * are versioned files (FOLDER_STRUCTURE.md rule 3), never constants.
  */
 class DocumentDecoder @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val gemma: GemmaEngine,
     private val preprocessor: ImagePreprocessor,
 ) {
     /**
+     * Loaded lazily — reads the versioned prompt file from assets once per
+     * process lifetime. Thread-safe because `by lazy` uses a lock by default.
+     */
+    private val systemPrompt: String by lazy {
+        context.assets
+            .open("ai/prompts/decoder/system_prompt.txt")
+            .bufferedReader()
+            .readText()
+            .trim()
+    }
+
+    /**
      * Decode a document image.
-     * Streams the raw AI response â€” call [parseDecodeResult] on the final string.
+     * Streams the raw AI response — call [parseDecodeResult] on the final string.
      */
     fun decodeStream(
         image: Bitmap,
-        userLanguage: String = "hi"    // "hi" | "en" | "te" | "ta" etc.
+        userLanguage: String = "hi"
     ): Flow<String> = flow {
         runCatching { gemma.ensureLoaded() }.onFailure {
             emit("ERROR: AI model not available. Please download the model first.")
@@ -40,7 +58,7 @@ class DocumentDecoder @Inject constructor(
         val prompt = buildUserPrompt(userLanguage)
 
         gemma.generateWithImage(
-            systemPrompt = SYSTEM_PROMPT,
+            systemPrompt = systemPrompt,
             userPrompt = prompt,
             image = processedImage
         ).collect { emit(it) }
@@ -58,7 +76,7 @@ class DocumentDecoder @Inject constructor(
                 ?.removePrefix(prefix)?.trim() ?: ""
 
         val redFlags = lines
-            .filter { it.startsWith("ðŸš¨") || it.startsWith("âš ï¸") }
+            .filter { it.startsWith("\uD83D\uDEA8") || it.startsWith("\u26A0\uFE0F") }
             .map { line ->
                 RedFlag(
                     severity = if (line.startsWith("RED_FLAG_CRITICAL:")) Severity.CRITICAL else Severity.MODERATE,
@@ -71,7 +89,7 @@ class DocumentDecoder @Inject constructor(
             riskScoreRaw.contains("HIGH", ignoreCase = true) -> RiskScore.HIGH
             riskScoreRaw.contains("CAUTION", ignoreCase = true) -> RiskScore.CAUTION
             riskScoreRaw.contains("SAFE", ignoreCase = true) -> RiskScore.SAFE
-            else -> RiskScore.CAUTION  // unknown parse = cautious default
+            else -> RiskScore.CAUTION
         }
 
         val questions = lines
@@ -93,48 +111,19 @@ class DocumentDecoder @Inject constructor(
 
     private fun buildUserPrompt(language: String): String {
         val langInstruction = when (language) {
-            "hi" -> "Respond in Hindi (Devanagari). Plain language â€” no legalese."
-            "te" -> "Respond in Telugu. Plain language â€” no legalese."
-            "ta" -> "Respond in Tamil. Plain language â€” no legalese."
-            "bn" -> "Respond in Bengali. Plain language â€” no legalese."
+            "hi" -> "Respond in Hindi (Devanagari). Plain language — no legalese."
+            "te" -> "Respond in Telugu. Plain language — no legalese."
+            "ta" -> "Respond in Tamil. Plain language — no legalese."
+            "bn" -> "Respond in Bengali. Plain language — no legalese."
             else -> "Respond in simple English. No legal jargon."
         }
         return "Analyze this document. $langInstruction"
     }
-
-    companion object {
-        /**
-         * Production system prompt for Document Decoder.
-         * Identical to the one in ai/prompts/decoder/system_prompt.txt
-         * Keep both in sync when editing.
-         */
-        val SYSTEM_PROMPT = """
-You are a plain-language legal translator for Indian citizens with limited literacy.
-
-Analyze the document in this image. Do NOT describe what you see â€” analyze what it MEANS for the person holding it.
-
-Return in this exact structure â€” nothing else:
-DOCUMENT_TYPE: [one line identifying what this is]
-SUMMARY: [2 sentences maximum, plain language in the user's language]
-RED_FLAGS: [each risky clause on its own line, starting with ðŸš¨ if critical, âš ï¸ if moderate]
-RISK_SCORE: [SAFE / CAUTION / HIGH RISK]
-ACTION: [the single most important thing to do right now]
-QUESTIONS: [exactly 2 questions to ask before signing]
-
-Hard rules that cannot be broken:
-- Never use: "beneficiary", "clause", "provisions", "pursuant", "hereinafter", "notwithstanding"
-- Any interest rate not featured prominently in the document's headline â†’ ðŸš¨
-- Any mention of contacts access, location tracking, or auto-debit â†’ ðŸš¨ immediately
-- Any lock-in period longer than what was stated verbally â†’ ðŸš¨
-- Any clause allowing self-assessment of damages â†’ ðŸš¨
-- If document image quality is too low to read confidently: say so, do not guess
-        """.trimIndent()
-    }
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 // Output model
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
 data class DecodeResult(
     val documentType: String,
@@ -154,6 +143,3 @@ data class RedFlag(
 enum class Severity { CRITICAL, MODERATE }
 
 enum class RiskScore { SAFE, CAUTION, HIGH }
-
-
-

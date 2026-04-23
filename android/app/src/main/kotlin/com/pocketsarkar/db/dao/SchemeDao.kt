@@ -15,7 +15,7 @@ interface SchemeDao {
     @SkipQueryVerification
     @Query("""
         SELECT s.* FROM schemes s
-        JOIN schemes_fts fts ON s.id = fts.rowid
+        JOIN schemes_fts fts ON s.rowid = fts.rowid
         WHERE schemes_fts MATCH :query
         AND s.isActive = 1
         ORDER BY rank

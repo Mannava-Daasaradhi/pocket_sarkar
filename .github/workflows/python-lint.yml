@@ -1,0 +1,42 @@
+name: Python Lint
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    name: Python Lint (ruff)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Lint backend
+        run: ruff check backend/
+
+      - name: Verify /health endpoint exists
+        run: |
+          pip install fastapi uvicorn httpx
+          python -c "
+          from fastapi.testclient import TestClient
+          import sys
+          sys.path.insert(0, 'backend')
+          from main import app
+          client = TestClient(app)
+          r = client.get('/health')
+          assert r.status_code == 200, f'Expected 200 got {r.status_code}'
+          assert r.json() == {'status': 'ok'}, f'Bad response: {r.json()}'
+          print('OK: /health returns {\"status\": \"ok\"}')
+          "
