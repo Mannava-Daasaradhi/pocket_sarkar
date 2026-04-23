@@ -99,6 +99,9 @@ dependencies {
     // androidx.sqlite:sqlite-bundled ships its own modern SQLite with FTS5 enabled.
     // Replaces requery — works on all OEMs including Samsung One UI which strips
     // FTS5 from the system SQLite. On Google Maven, no JitPack required.
+    // NOTE: sqlite-bundled is excluded from unit test configurations because its
+    // native .so/.dll cannot load under Robolectric on the JVM. Unit tests use
+    // Robolectric's own native SQLite (sqliteMode=NATIVE) which ships FTS5.
     implementation(libs.sqlite.bundled)
 
     // ── Room — SQLite with FTS5 for scheme search ─────────────────────────────

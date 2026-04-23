@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Robolectric picks up this manifest for unit tests instead of the main one.
+    By omitting android:name on <application>, Robolectric uses the default
+    android.app.Application class — which means PocketSarkarApp.onCreate()
+    never runs, so the Hilt-injected 'database' field is never touched,
+    and the IllegalStateException cascade is eliminated.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.pocketsarkar">
+
+    <application />
+
+</manifest>

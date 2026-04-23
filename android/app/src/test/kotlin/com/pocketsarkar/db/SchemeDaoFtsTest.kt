@@ -20,8 +20,13 @@ import org.robolectric.annotation.Config
 /**
  * Phase-2 unit tests for SchemeDao.
  *
- * Uses Robolectric in-memory Room with sqliteMode=NATIVE (robolectric.properties)
- * so FTS5 virtual tables work correctly. Native SQLite 3.38+ ships FTS5 built-in.
+ * Uses Robolectric sqliteMode=NATIVE (set in robolectric.properties).
+ * Robolectric 4.13 ships SQLite 3.44+ with FTS5 on all platforms including Windows.
+ *
+ * androidx.sqlite:sqlite-bundled is intentionally excluded from the test classpath
+ * in build.gradle.kts — its native .so/.dll cannot load under a JVM (Robolectric)
+ * test runner. Production builds use BundledSQLiteDriver; tests use Robolectric's
+ * own native SQLite via sqliteMode=NATIVE.
  *
  * Covers:
  *  - FTS search: "PM Kisan" → ≥1 result
@@ -32,15 +37,12 @@ import org.robolectric.annotation.Config
  *  - getSchemeById
  *  - getStaleSchemes
  *  - confidenceScore decay: 0.01 per week, floor 0.0
- *  - isStale flag below threshold 0.6
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
-class SchemeDaoTest {
+class SchemeDaoFtsTest {
 
     private lateinit var db: PocketSarkarDatabase
-
-    // ── Setup / Teardown ──────────────────────────────────────────────────────
 
     @Before
     fun createDb() {
@@ -82,7 +84,6 @@ class SchemeDaoTest {
         lastVerifiedEpoch = lastVerifiedEpoch,
     )
 
-    /** Insert schemes then rebuild the FTS index. */
     private fun insertAndRebuildFts(schemes: List<Scheme>) = runBlocking {
         db.schemeDao().insertSchemes(schemes)
         db.openHelper.writableDatabase.execSQL(
@@ -90,7 +91,7 @@ class SchemeDaoTest {
         )
     }
 
-    // ── FTS Search Tests ──────────────────────────────────────────────────────
+    // ── FTS Tests ─────────────────────────────────────────────────────────────
 
     @Test
     fun fts_pmKisan_returnsExactlyOneResult() = runBlocking {
@@ -106,16 +107,9 @@ class SchemeDaoTest {
             scheme("UJJWALA_005", "PM Ujjwala Yojana",
                 descriptionEn = "Free LPG connection for BPL women"),
         ))
-
         val results = db.schemeDao().searchByFTS("PM Kisan")
-        assertTrue(
-            "FTS search 'PM Kisan' must return at least 1 result (got ${results.size})",
-            results.isNotEmpty()
-        )
-        assertTrue(
-            "FTS result must contain PM Kisan scheme",
-            results.any { it.id == "PM_KISAN_001" }
-        )
+        assertTrue("FTS 'PM Kisan' must return >= 1 result (got ${results.size})", results.isNotEmpty())
+        assertTrue("FTS result must contain PM Kisan scheme", results.any { it.id == "PM_KISAN_001" })
     }
 
     @Test
@@ -126,12 +120,8 @@ class SchemeDaoTest {
             scheme("AYUSHMAN_003", "Ayushman Bharat PM-JAY",
                 descriptionEn = "Health coverage for poor families"),
         ))
-
         val results = db.schemeDao().searchByFTS("kisan")
-        assertTrue(
-            "FTS search 'kisan' must return at least 1 result (got ${results.size})",
-            results.isNotEmpty()
-        )
+        assertTrue("FTS 'kisan' must return >= 1 result (got ${results.size})", results.isNotEmpty())
     }
 
     @Test
@@ -139,24 +129,18 @@ class SchemeDaoTest {
         insertAndRebuildFts(listOf(
             scheme("PM_KISAN_001", "PM Kisan Samman Nidhi",
                 descriptionEn = "Direct income support for farmers"),
-            scheme("PM_AWAS_002",  "PM Awas Yojana",
+            scheme("PM_AWAS_002", "PM Awas Yojana",
                 descriptionEn = "Housing scheme for rural families"),
         ))
-
         val results = db.schemeDao().searchByFTS("zzznomatch")
-        assertTrue(
-            "FTS search 'zzznomatch' must return empty list",
-            results.isEmpty()
-        )
+        assertTrue("FTS 'zzznomatch' must return empty list", results.isEmpty())
     }
 
     // ── getSchemeById ─────────────────────────────────────────────────────────
 
     @Test
     fun getSchemeById_found() = runBlocking {
-        db.schemeDao().insertSchemes(listOf(
-            scheme("PM_KISAN_001", "PM Kisan Samman Nidhi")
-        ))
+        db.schemeDao().insertSchemes(listOf(scheme("PM_KISAN_001", "PM Kisan Samman Nidhi")))
         val result = db.schemeDao().getSchemeById("PM_KISAN_001")
         assertNotNull("Should find scheme by ID", result)
         assertEquals("PM_KISAN_001", result!!.id)
@@ -182,7 +166,7 @@ class SchemeDaoTest {
         assertTrue(results.all { it.category == "agriculture" })
     }
 
-    // ── getEligibleSchemes SQL filter ─────────────────────────────────────────
+    // ── getEligibleSchemes ────────────────────────────────────────────────────
 
     @Test
     fun getEligibleSchemes_filtersStateCorrectly() = runBlocking {
@@ -191,16 +175,10 @@ class SchemeDaoTest {
             scheme("UP_001",  "UP Scheme",      state = "UP"),
             scheme("MH_001",  "MH Scheme",      state = "MH"),
         ))
-
-        val results = db.schemeDao().getEligibleSchemes(
-            state = "UP", incomeLPA = 5.0, age = 30, gender = "ALL"
-        )
-        assertTrue("Central scheme should be included for UP user",
-            results.any { it.id == "CENTRAL" })
-        assertTrue("UP scheme should be included for UP user",
-            results.any { it.id == "UP_001" })
-        assertFalse("MH scheme should be excluded for UP user",
-            results.any { it.id == "MH_001" })
+        val results = db.schemeDao().getEligibleSchemes(state = "UP", incomeLPA = 5.0, age = 30, gender = "ALL")
+        assertTrue("Central scheme included for UP user", results.any { it.id == "CENTRAL" })
+        assertTrue("UP scheme included for UP user",      results.any { it.id == "UP_001" })
+        assertFalse("MH scheme excluded for UP user",     results.any { it.id == "MH_001" })
     }
 
     @Test
@@ -210,91 +188,48 @@ class SchemeDaoTest {
             scheme("WOMEN_001", "Women Scheme",     gender = "F"),
             scheme("MEN_001",   "Men Scheme",       gender = "M"),
         ))
-
-        val results = db.schemeDao().getEligibleSchemes(
-            state = "ALL", incomeLPA = 5.0, age = 30, gender = "F"
-        )
-        assertTrue("Universal scheme should be included for F",
-            results.any { it.id == "UNIVERSAL" })
-        assertTrue("Women-only scheme should be included for F",
-            results.any { it.id == "WOMEN_001" })
-        assertFalse("Men-only scheme should be excluded for F",
-            results.any { it.id == "MEN_001" })
+        val results = db.schemeDao().getEligibleSchemes(state = "ALL", incomeLPA = 5.0, age = 30, gender = "F")
+        assertTrue("Universal included for F",  results.any { it.id == "UNIVERSAL" })
+        assertTrue("Women-only included for F", results.any { it.id == "WOMEN_001" })
+        assertFalse("Men-only excluded for F",  results.any { it.id == "MEN_001" })
     }
 
     @Test
     fun getEligibleSchemes_filtersIncomeCorrectly() = runBlocking {
-        // Insert a scheme with an income rule: annual_income lte 200000 (2 LPA)
         db.schemeDao().insertSchemes(listOf(
             scheme("LOW_INCOME", "Low Income Scheme"),
             scheme("ANY_INCOME", "Any Income Scheme"),
         ))
         db.schemeDao().insertRules(listOf(
             EligibilityRule(
-                schemeId = "LOW_INCOME",
-                field = "annual_income",
-                operator = "lte",
-                value = "200000",   // 2 LPA limit
-                labelEn = "Income up to 2 LPA",
-                labelHi = "2 LPA तक आय"
+                schemeId = "LOW_INCOME", field = "annual_income",
+                operator = "lte", value = "200000",
+                labelEn = "Income up to 2 LPA", labelHi = "2 LPA तक आय"
             )
         ))
+        val qualify = db.schemeDao().getEligibleSchemes(state = "ALL", incomeLPA = 1.0, age = 30, gender = "ALL")
+        assertTrue("1 LPA qualifies for low-income scheme", qualify.any { it.id == "LOW_INCOME" })
 
-        // User with 1 LPA income — qualifies for both
-        val qualify = db.schemeDao().getEligibleSchemes(
-            state = "ALL", incomeLPA = 1.0, age = 30, gender = "ALL"
-        )
-        assertTrue("1 LPA user should qualify for low-income scheme",
-            qualify.any { it.id == "LOW_INCOME" })
-
-        // User with 5 LPA income — fails income rule for LOW_INCOME
-        val disqualify = db.schemeDao().getEligibleSchemes(
-            state = "ALL", incomeLPA = 5.0, age = 30, gender = "ALL"
-        )
-        assertFalse("5 LPA user should NOT qualify for scheme with 2 LPA limit",
-            disqualify.any { it.id == "LOW_INCOME" })
-        assertTrue("5 LPA user should still see any-income scheme",
-            disqualify.any { it.id == "ANY_INCOME" })
+        val disqualify = db.schemeDao().getEligibleSchemes(state = "ALL", incomeLPA = 5.0, age = 30, gender = "ALL")
+        assertFalse("5 LPA does NOT qualify for 2 LPA scheme", disqualify.any { it.id == "LOW_INCOME" })
+        assertTrue("5 LPA still sees any-income scheme",       disqualify.any { it.id == "ANY_INCOME" })
     }
 
     @Test
     fun getEligibleSchemes_filtersAgeCorrectly() = runBlocking {
-        db.schemeDao().insertSchemes(listOf(
-            scheme("YOUTH_SCHEME", "Youth Scheme"),
-        ))
+        db.schemeDao().insertSchemes(listOf(scheme("YOUTH_SCHEME", "Youth Scheme")))
         db.schemeDao().insertRules(listOf(
-            EligibilityRule(
-                schemeId = "YOUTH_SCHEME",
-                field = "age", operator = "lte", value = "35",
-                labelEn = "Age 35 or below", labelHi = "35 वर्ष तक"
-            ),
-            EligibilityRule(
-                schemeId = "YOUTH_SCHEME",
-                field = "age", operator = "gte", value = "18",
-                labelEn = "Age 18 or above", labelHi = "18 वर्ष या अधिक"
-            )
+            EligibilityRule(schemeId = "YOUTH_SCHEME", field = "age", operator = "lte", value = "35",
+                labelEn = "Age 35 or below", labelHi = "35 वर्ष तक"),
+            EligibilityRule(schemeId = "YOUTH_SCHEME", field = "age", operator = "gte", value = "18",
+                labelEn = "Age 18 or above", labelHi = "18 वर्ष या अधिक")
         ))
-
-        // Age 25 — qualifies
-        val qualify = db.schemeDao().getEligibleSchemes(
-            state = "ALL", incomeLPA = 5.0, age = 25, gender = "ALL"
-        )
-        assertTrue("Age 25 should qualify for youth scheme (18-35)",
-            qualify.any { it.id == "YOUTH_SCHEME" })
-
-        // Age 50 — too old
-        val tooOld = db.schemeDao().getEligibleSchemes(
-            state = "ALL", incomeLPA = 5.0, age = 50, gender = "ALL"
-        )
-        assertFalse("Age 50 should NOT qualify for youth scheme (18-35)",
-            tooOld.any { it.id == "YOUTH_SCHEME" })
-
-        // Age 15 — too young
-        val tooYoung = db.schemeDao().getEligibleSchemes(
-            state = "ALL", incomeLPA = 5.0, age = 15, gender = "ALL"
-        )
-        assertFalse("Age 15 should NOT qualify for youth scheme (18-35)",
-            tooYoung.any { it.id == "YOUTH_SCHEME" })
+        assertTrue("Age 25 qualifies (18-35)",
+            db.schemeDao().getEligibleSchemes("ALL", 5.0, 25, "ALL").any { it.id == "YOUTH_SCHEME" })
+        assertFalse("Age 50 too old",
+            db.schemeDao().getEligibleSchemes("ALL", 5.0, 50, "ALL").any { it.id == "YOUTH_SCHEME" })
+        assertFalse("Age 15 too young",
+            db.schemeDao().getEligibleSchemes("ALL", 5.0, 15, "ALL").any { it.id == "YOUTH_SCHEME" })
     }
 
     // ── getStaleSchemes ───────────────────────────────────────────────────────
@@ -302,78 +237,54 @@ class SchemeDaoTest {
     @Test
     fun getStaleSchemes_returnsOnlyBelowThreshold() = runBlocking {
         db.schemeDao().insertSchemes(listOf(
-            scheme("FRESH",   "Fresh Scheme",  confidenceScore = 1.0f),
-            scheme("STALE1",  "Stale Scheme 1",confidenceScore = 0.4f),
-            scheme("STALE2",  "Stale Scheme 2",confidenceScore = 0.59f),
-            scheme("BORDER",  "Border Scheme", confidenceScore = 0.6f),
+            scheme("FRESH",  "Fresh Scheme",   confidenceScore = 1.0f),
+            scheme("STALE1", "Stale Scheme 1", confidenceScore = 0.4f),
+            scheme("STALE2", "Stale Scheme 2", confidenceScore = 0.59f),
+            scheme("BORDER", "Border Scheme",  confidenceScore = 0.6f),
         ))
-
         val stale = db.schemeDao().getStaleSchemes(threshold = 0.6)
-        assertEquals("Should return exactly 2 stale schemes", 2, stale.size)
+        assertEquals("Exactly 2 stale schemes", 2, stale.size)
         assertTrue(stale.all { it.confidenceScore < 0.6f })
         assertTrue(stale.any { it.id == "STALE1" })
         assertTrue(stale.any { it.id == "STALE2" })
-        assertFalse("Score exactly 0.6 must NOT be stale",
-            stale.any { it.id == "BORDER" })
+        assertFalse("0.6 exactly is NOT stale", stale.any { it.id == "BORDER" })
     }
 
-    // ── Confidence score decay (pure logic) ───────────────────────────────────
+    // ── Confidence score decay (pure logic — no DB) ───────────────────────────
 
     @Test
     fun confidenceDecay_1percentPerWeek() {
         val now = System.currentTimeMillis()
-        val oneWeekAgo = now - MS_PER_WEEK
-
-        val decayed = computeDecayedScore(1.0f, oneWeekAgo, now)
-
-        assertEquals("Score should decay by exactly 0.01 after 1 week",
-            0.99f, decayed, 0.001f)
+        val decayed = computeDecayedScore(1.0f, now - MS_PER_WEEK, now)
+        assertEquals("Decay 0.01 after 1 week", 0.99f, decayed, 0.001f)
     }
 
     @Test
     fun confidenceDecay_flooredAtZero() {
         val now = System.currentTimeMillis()
-        val longAgo = now - (200 * MS_PER_WEEK)   // 200 weeks ago
-
-        val decayed = computeDecayedScore(1.0f, longAgo, now)
-
-        assertEquals("Decayed score must floor at 0.0", 0.0f, decayed, 0.001f)
+        val decayed = computeDecayedScore(1.0f, now - (200 * MS_PER_WEEK), now)
+        assertEquals("Floor at 0.0", 0.0f, decayed, 0.001f)
     }
 
     @Test
     fun confidenceDecay_freshSchemeIsNotStale() {
         val now = System.currentTimeMillis()
-
         val decayed = computeDecayedScore(1.0f, now, now)
-
-        assertTrue("A just-verified scheme should not be stale (score=$decayed)",
-            decayed >= STALE_THRESHOLD)
+        assertTrue("Just-verified scheme not stale (score=$decayed)", decayed >= STALE_THRESHOLD)
     }
 
     @Test
     fun confidenceDecay_after50WeeksIsStale() {
         val now = System.currentTimeMillis()
-        val fiftyWeeksAgo = now - (50 * MS_PER_WEEK)
-
-        val decayed = computeDecayedScore(1.0f, fiftyWeeksAgo, now)
-
-        assertTrue(
-            "After 50 weeks score=$decayed should be below stale threshold $STALE_THRESHOLD",
-            decayed < STALE_THRESHOLD
-        )
+        val decayed = computeDecayedScore(1.0f, now - (50 * MS_PER_WEEK), now)
+        assertTrue("After 50 weeks score=$decayed < $STALE_THRESHOLD", decayed < STALE_THRESHOLD)
     }
 
     @Test
     fun confidenceDecay_exactlyAtThresholdAfter40Weeks() {
         val now = System.currentTimeMillis()
-        val fortyWeeksAgo = now - (40 * MS_PER_WEEK)
-
-        val decayed = computeDecayedScore(1.0f, fortyWeeksAgo, now)
-
-        // 1.0 - (0.01 * 40) = 0.60 — right at the threshold, NOT stale
-        assertTrue(
-            "At exactly 40 weeks score=$decayed should still be >= $STALE_THRESHOLD",
-            decayed >= STALE_THRESHOLD
-        )
+        val decayed = computeDecayedScore(1.0f, now - (40 * MS_PER_WEEK), now)
+        // 1.0 - (0.01 * 40) = 0.60 — at threshold, NOT stale
+        assertTrue("At 40 weeks score=$decayed should be >= $STALE_THRESHOLD", decayed >= STALE_THRESHOLD)
     }
 }

@@ -78,7 +78,7 @@ androidx-test-core = { group = "androidx.test", name = "core-ktx", version.ref =
 room-runtime                        = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx                            = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler                       = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
-
+sqlite-jdbc = { group = "androidx.sqlite", name = "sqlite-jdbc", version = "2.5.0" }
 # androidx.sqlite bundled SQLite — Google Maven, FTS5 on all devices, no JitPack
 sqlite-bundled                      = { group = "androidx.sqlite", name = "sqlite-bundled", version.ref = "androidxSqliteBundled" }
 
