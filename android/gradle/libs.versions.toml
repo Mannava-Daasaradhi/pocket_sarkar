@@ -14,12 +14,12 @@ coreKtx                 = "1.13.1"
 appcompat               = "1.7.0"
 
 # Room (local DB + FTS5)
-room                    = "2.6.1"
+room                    = "2.7.0"
 
 # androidx.sqlite bundled — ships FTS5 on ALL OEMs including Samsung One UI.
 # Official Google replacement for requery. On Google Maven, no JitPack needed.
 # Requires Room 2.6+ (we use 2.6.1). Uses BundledSQLiteDriver pattern.
-androidxSqliteBundled   = "2.5.0-beta01"
+androidxSqliteBundled   = "2.5.0"
 
 # DI
 hilt                    = "2.51.1"

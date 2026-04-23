@@ -32,7 +32,7 @@ object AppModule {
             .setDriver(BundledSQLiteDriver())
             .addCallback(PocketSarkarDatabase.ON_CREATE_CALLBACK)
             .addMigrations(PocketSarkarDatabase.MIGRATION_1_2)
-            .fallbackToDestructiveMigration()
+            .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }
 
