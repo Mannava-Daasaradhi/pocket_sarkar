@@ -5,24 +5,23 @@ scripts/build_db/build_db.py
 Phase 2 — Scheme Database Build Script
 
 Reads raw JSON files from data/raw/central_schemes/,
-normalises them, and outputs data/processed/schemes.json
-ready for import into the Android DatabaseSeeder or a
-pre-populated SQLite asset.
+normalises them, and outputs:
+  data/processed/schemes.json
+  data/processed/eligibility_rules.json
+  data/processed/helplines.json
+  data/processed/stats.txt
+  data/schemes/sqlite/pocket_sarkar.db   ← SQLite with FTS5 rebuild
 
 Usage:
     python3 scripts/build_db/build_db.py
     python3 scripts/build_db/build_db.py --refresh-dates   # reset all confidence to 1.0
 
-Output:
-    data/processed/schemes.json
-    data/processed/eligibility_rules.json
-    data/processed/helplines.json
-    data/processed/stats.txt
+The SQLite DB matches the Room schema exactly so it can be shipped as an
+asset database or used for offline testing.
 """
 import sqlite3
 import argparse
 import json
-import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -30,14 +29,16 @@ from pathlib import Path
 ROOT          = Path(__file__).resolve().parent.parent.parent
 RAW_DIR       = ROOT / "data" / "raw" / "central_schemes"
 PROCESSED_DIR = ROOT / "data" / "processed"
+SQLITE_DIR    = ROOT / "data" / "schemes" / "sqlite"
 PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+SQLITE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ── Confidence decay ──────────────────────────────────────────────────────────
 
 def compute_confidence(last_verified_iso: str, refresh: bool) -> float:
     """Decay 0.01 per week from last verified date. Floor at 0.0.
-    If --refresh-dates is set, always return 1.0 and treat data as fresh today.
+    If --refresh-dates is set, always return 1.0.
     """
     if refresh:
         return 1.0
@@ -45,8 +46,7 @@ def compute_confidence(last_verified_iso: str, refresh: bool) -> float:
         verified = datetime.fromisoformat(last_verified_iso.replace("Z", "+00:00"))
         now = datetime.now(timezone.utc)
         weeks_elapsed = (now - verified).days / 7
-        score = max(0.0, round(1.0 - 0.01 * weeks_elapsed, 4))
-        return score
+        return max(0.0, round(1.0 - 0.01 * weeks_elapsed, 4))
     except Exception:
         return 1.0
 
@@ -54,27 +54,25 @@ def compute_confidence(last_verified_iso: str, refresh: bool) -> float:
 # ── Normalisation ─────────────────────────────────────────────────────────────
 
 def normalise_scheme(raw: dict, refresh: bool) -> dict:
-    """Map raw scraped keys to canonical Scheme entity fields."""
     now_iso = datetime.now(timezone.utc).isoformat()
     last_verified = now_iso if refresh else raw.get("last_verified", now_iso)
-
     return {
-        "id":               raw["id"],
-        "nameEn":           raw.get("name_en", ""),
-        "nameHi":           raw.get("name_hi", ""),
-        "nameLocal":        raw.get("name_local"),
-        "category":         raw.get("category", "general"),
-        "ministryEn":       raw.get("ministry_en", "Government of India"),
-        "descriptionEn":    raw.get("description_en", ""),
-        "descriptionHi":    raw.get("description_hi", ""),
-        "benefitAmount":    raw.get("benefit_amount"),
-        "benefitType":      raw.get("benefit_type", "service"),
-        "targetStates":     raw.get("target_states", "ALL"),
-        "targetGender":     raw.get("target_gender", "ALL"),
-        "targetCategory":   raw.get("target_category", "ALL"),
-        "portalUrl":        raw.get("portal_url"),
-        "helplineNumber":   raw.get("helpline_number"),
-        "confidenceScore":  compute_confidence(last_verified, refresh),
+        "id":                raw["id"],
+        "nameEn":            raw.get("name_en", ""),
+        "nameHi":            raw.get("name_hi", ""),
+        "nameLocal":         raw.get("name_local"),
+        "category":          raw.get("category", "general"),
+        "ministryEn":        raw.get("ministry_en", "Government of India"),
+        "descriptionEn":     raw.get("description_en", ""),
+        "descriptionHi":     raw.get("description_hi", ""),
+        "benefitAmount":     raw.get("benefit_amount"),
+        "benefitType":       raw.get("benefit_type", "service"),
+        "targetStates":      raw.get("target_states", "ALL"),
+        "targetGender":      raw.get("target_gender", "ALL"),
+        "targetCategory":    raw.get("target_category", "ALL"),
+        "portalUrl":         raw.get("portal_url"),
+        "helplineNumber":    raw.get("helpline_number"),
+        "confidenceScore":   compute_confidence(last_verified, refresh),
         "lastVerifiedEpoch": int(
             datetime.now(timezone.utc).timestamp() * 1000
             if refresh
@@ -110,32 +108,152 @@ def normalise_helpline(raw: dict) -> dict:
     }
 
 
-# ── Built-in helplines fallback ───────────────────────────────────────────────
-# These are the 20 core national helplines. They are merged with any helplines
-# found in the raw batch files. Batch files take precedence on duplicate id.
+# ── Built-in helplines ────────────────────────────────────────────────────────
 
 BUILTIN_HELPLINES = [
-    {"id": "POLICE_100",      "nameEn": "Police Emergency",            "nameHi": "पुलिस आपातकाल",            "number": "100",           "category": "police",          "states": "ALL", "available24x7": True,  "isTollFree": True},
-    {"id": "AMBULANCE_108",   "nameEn": "Ambulance",                   "nameHi": "एम्बुलेंस",                 "number": "108",           "category": "health",          "states": "ALL", "available24x7": True,  "isTollFree": True},
-    {"id": "FIRE_101",        "nameEn": "Fire Brigade",                "nameHi": "दमकल",                      "number": "101",           "category": "emergency",       "states": "ALL", "available24x7": True,  "isTollFree": True},
-    {"id": "WOMEN_1091",      "nameEn": "Women Helpline",              "nameHi": "महिला हेल्पलाइन",           "number": "1091",          "category": "women",           "states": "ALL", "available24x7": True,  "isTollFree": True},
-    {"id": "CHILD_1098",      "nameEn": "Childline",                   "nameHi": "चाइल्डलाइन",                "number": "1098",          "category": "child",           "states": "ALL", "available24x7": True,  "isTollFree": True},
-    {"id": "SENIOR_14567",    "nameEn": "Senior Citizen Helpline",     "nameHi": "वरिष्ठ नागरिक हेल्पलाइन",  "number": "14567",         "category": "senior",          "states": "ALL", "available24x7": True,  "isTollFree": True},
-    {"id": "LABOUR_1800111",  "nameEn": "Labour Helpline",             "nameHi": "श्रम हेल्पलाइन",            "number": "1800-11-8500",  "category": "labour",          "states": "ALL", "available24x7": False, "isTollFree": True},
-    {"id": "LEGAL_15100",     "nameEn": "NALSA Legal Aid",             "nameHi": "NALSA कानूनी सहायता",       "number": "15100",         "category": "legal",           "states": "ALL", "available24x7": False, "isTollFree": True},
-    {"id": "KISAN_155261",    "nameEn": "Kisan Call Centre",           "nameHi": "किसान कॉल सेंटर",           "number": "155261",        "category": "agriculture",     "states": "ALL", "available24x7": True,  "isTollFree": True},
-    {"id": "AYUSHMAN_14555",  "nameEn": "Ayushman Bharat Helpline",    "nameHi": "आयुष्मान भारत हेल्पलाइन",  "number": "14555",         "category": "health",          "states": "ALL", "available24x7": False, "isTollFree": True},
-    {"id": "UJJWALA_18002666","nameEn": "PM Ujjwala Helpline",         "nameHi": "PM उज्ज्वला हेल्पलाइन",    "number": "1800-266-6696", "category": "energy",          "states": "ALL", "available24x7": False, "isTollFree": True},
-    {"id": "RATION_14445",    "nameEn": "PDS / Ration Helpline",       "nameHi": "PDS / राशन हेल्पलाइन",     "number": "14445",         "category": "food",            "states": "ALL", "available24x7": False, "isTollFree": True},
-    {"id": "ESHRAM_14434",    "nameEn": "e-Shram Helpline",            "nameHi": "ई-श्रम हेल्पलाइन",         "number": "14434",         "category": "labour",          "states": "ALL", "available24x7": False, "isTollFree": True},
-    {"id": "CYBER_1930",      "nameEn": "Cyber Crime Helpline",        "nameHi": "साइबर अपराध हेल्पलाइन",    "number": "1930",          "category": "legal",           "states": "ALL", "available24x7": True,  "isTollFree": True},
-    {"id": "WATER_1916",      "nameEn": "Jal Jeevan Helpline",         "nameHi": "जल जीवन मिशन हेल्पलाइन",  "number": "1916",          "category": "water_sanitation","states": "ALL", "available24x7": False, "isTollFree": True},
-    {"id": "MENTAL_iCall",    "nameEn": "iCall Mental Health",         "nameHi": "iCall मानसिक स्वास्थ्य",   "number": "9152987821",    "category": "health",          "states": "ALL", "available24x7": False, "isTollFree": False},
-    {"id": "DISABILITY_1800", "nameEn": "Divyang Helpline",            "nameHi": "दिव्यांग हेल्पलाइन",       "number": "1800-11-0031",  "category": "health",          "states": "ALL", "available24x7": False, "isTollFree": True},
-    {"id": "EDUCATION_1800111","nameEn": "Samagra Shiksha Helpline",   "nameHi": "समग्र शिक्षा हेल्पलाइन",   "number": "1800-11-2001",  "category": "education",       "states": "ALL", "available24x7": False, "isTollFree": True},
-    {"id": "PF_1800118005",   "nameEn": "EPFO PF Helpline",            "nameHi": "EPFO PF हेल्पलाइन",        "number": "1800-118-005",  "category": "labour",          "states": "ALL", "available24x7": False, "isTollFree": True},
-    {"id": "MUDRA_1800111",   "nameEn": "MUDRA Loan Helpline",         "nameHi": "मुद्रा लोन हेल्पलाइन",     "number": "1800-180-1111", "category": "financial",       "states": "ALL", "available24x7": False, "isTollFree": True},
+    {"id": "POLICE_100",       "nameEn": "Police Emergency",           "nameHi": "पुलिस आपातकाल",           "number": "100",           "category": "police",          "states": "ALL", "available24x7": True,  "isTollFree": True},
+    {"id": "AMBULANCE_108",    "nameEn": "Ambulance",                  "nameHi": "एम्बुलेंस",                "number": "108",           "category": "health",          "states": "ALL", "available24x7": True,  "isTollFree": True},
+    {"id": "FIRE_101",         "nameEn": "Fire Brigade",               "nameHi": "दमकल",                     "number": "101",           "category": "emergency",       "states": "ALL", "available24x7": True,  "isTollFree": True},
+    {"id": "WOMEN_1091",       "nameEn": "Women Helpline",             "nameHi": "महिला हेल्पलाइन",          "number": "1091",          "category": "women",           "states": "ALL", "available24x7": True,  "isTollFree": True},
+    {"id": "CHILD_1098",       "nameEn": "Childline",                  "nameHi": "चाइल्डलाइन",               "number": "1098",          "category": "child",           "states": "ALL", "available24x7": True,  "isTollFree": True},
+    {"id": "SENIOR_14567",     "nameEn": "Senior Citizen Helpline",    "nameHi": "वरिष्ठ नागरिक हेल्पलाइन", "number": "14567",         "category": "senior",          "states": "ALL", "available24x7": True,  "isTollFree": True},
+    {"id": "LABOUR_1800111",   "nameEn": "Labour Helpline",            "nameHi": "श्रम हेल्पलाइन",           "number": "1800-11-8500",  "category": "labour",          "states": "ALL", "available24x7": False, "isTollFree": True},
+    {"id": "LEGAL_15100",      "nameEn": "NALSA Legal Aid",            "nameHi": "NALSA कानूनी सहायता",      "number": "15100",         "category": "legal",           "states": "ALL", "available24x7": False, "isTollFree": True},
+    {"id": "KISAN_155261",     "nameEn": "Kisan Call Centre",          "nameHi": "किसान कॉल सेंटर",          "number": "155261",        "category": "agriculture",     "states": "ALL", "available24x7": True,  "isTollFree": True},
+    {"id": "AYUSHMAN_14555",   "nameEn": "Ayushman Bharat Helpline",   "nameHi": "आयुष्मान भारत हेल्पलाइन", "number": "14555",         "category": "health",          "states": "ALL", "available24x7": False, "isTollFree": True},
+    {"id": "UJJWALA_18002666", "nameEn": "PM Ujjwala Helpline",        "nameHi": "PM उज्ज्वला हेल्पलाइन",   "number": "1800-266-6696", "category": "energy",          "states": "ALL", "available24x7": False, "isTollFree": True},
+    {"id": "RATION_14445",     "nameEn": "PDS / Ration Helpline",      "nameHi": "PDS / राशन हेल्पलाइन",    "number": "14445",         "category": "food",            "states": "ALL", "available24x7": False, "isTollFree": True},
+    {"id": "ESHRAM_14434",     "nameEn": "e-Shram Helpline",           "nameHi": "ई-श्रम हेल्पलाइन",        "number": "14434",         "category": "labour",          "states": "ALL", "available24x7": False, "isTollFree": True},
+    {"id": "CYBER_1930",       "nameEn": "Cyber Crime Helpline",       "nameHi": "साइबर अपराध हेल्पलाइन",   "number": "1930",          "category": "legal",           "states": "ALL", "available24x7": True,  "isTollFree": True},
+    {"id": "WATER_1916",       "nameEn": "Jal Jeevan Helpline",        "nameHi": "जल जीवन मिशन हेल्पलाइन", "number": "1916",          "category": "water_sanitation","states": "ALL", "available24x7": False, "isTollFree": True},
+    {"id": "MENTAL_iCall",     "nameEn": "iCall Mental Health",        "nameHi": "iCall मानसिक स्वास्थ्य",  "number": "9152987821",    "category": "health",          "states": "ALL", "available24x7": False, "isTollFree": False},
+    {"id": "DISABILITY_1800",  "nameEn": "Divyang Helpline",           "nameHi": "दिव्यांग हेल्पलाइन",      "number": "1800-11-0031",  "category": "health",          "states": "ALL", "available24x7": False, "isTollFree": True},
+    {"id": "EDUCATION_1800111","nameEn": "Samagra Shiksha Helpline",   "nameHi": "समग्र शिक्षा हेल्पलाइन",  "number": "1800-11-2001",  "category": "education",       "states": "ALL", "available24x7": False, "isTollFree": True},
+    {"id": "PF_1800118005",    "nameEn": "EPFO PF Helpline",           "nameHi": "EPFO PF हेल्पलाइन",       "number": "1800-118-005",  "category": "labour",          "states": "ALL", "available24x7": False, "isTollFree": True},
+    {"id": "MUDRA_1800111",    "nameEn": "MUDRA Loan Helpline",        "nameHi": "मुद्रा लोन हेल्पलाइन",    "number": "1800-180-1111", "category": "financial",       "states": "ALL", "available24x7": False, "isTollFree": True},
 ]
+
+
+# ── SQLite builder ────────────────────────────────────────────────────────────
+
+def build_sqlite(db_path: Path, schemes: list, rules: list, helplines: list) -> int:
+    """Create pocket_sarkar.db matching the Room schema exactly.
+    Returns count of schemes inserted.
+    """
+    if db_path.exists():
+        db_path.unlink()
+
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+
+    # schemes table (matches Room @Entity exactly)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS schemes (
+            id TEXT PRIMARY KEY NOT NULL,
+            nameEn TEXT NOT NULL,
+            nameHi TEXT NOT NULL,
+            nameLocal TEXT,
+            category TEXT NOT NULL,
+            ministryEn TEXT NOT NULL,
+            descriptionEn TEXT NOT NULL,
+            descriptionHi TEXT NOT NULL,
+            benefitAmount TEXT,
+            benefitType TEXT NOT NULL,
+            targetStates TEXT NOT NULL DEFAULT 'ALL',
+            targetGender TEXT NOT NULL DEFAULT 'ALL',
+            targetCategory TEXT NOT NULL DEFAULT 'ALL',
+            portalUrl TEXT,
+            helplineNumber TEXT,
+            confidenceScore REAL NOT NULL DEFAULT 1.0,
+            lastVerifiedEpoch INTEGER NOT NULL,
+            isActive INTEGER NOT NULL DEFAULT 1
+        )
+    """)
+
+    # FTS5 virtual table — content_rowid=rowid is required so that
+    # 'INSERT INTO schemes_fts(schemes_fts) VALUES(\'rebuild\')' works correctly.
+    cur.execute("""
+        CREATE VIRTUAL TABLE IF NOT EXISTS schemes_fts USING fts5(
+            nameEn, nameHi, descriptionEn, descriptionHi, category, benefitType,
+            content='schemes',
+            content_rowid='rowid'
+        )
+    """)
+
+    # eligibility_rules table
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS eligibility_rules (
+            ruleId INTEGER PRIMARY KEY AUTOINCREMENT,
+            schemeId TEXT NOT NULL,
+            field TEXT NOT NULL,
+            operator TEXT NOT NULL,
+            value TEXT NOT NULL,
+            labelEn TEXT NOT NULL DEFAULT '',
+            labelHi TEXT NOT NULL DEFAULT '',
+            FOREIGN KEY (schemeId) REFERENCES schemes(id) ON DELETE CASCADE
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_rules_schemeId ON eligibility_rules(schemeId)")
+
+    # helpline_numbers table
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS helpline_numbers (
+            id TEXT PRIMARY KEY NOT NULL,
+            nameEn TEXT NOT NULL,
+            nameHi TEXT NOT NULL,
+            number TEXT NOT NULL,
+            category TEXT NOT NULL,
+            states TEXT NOT NULL DEFAULT 'ALL',
+            available24x7 INTEGER NOT NULL DEFAULT 0,
+            isTollFree INTEGER NOT NULL DEFAULT 1
+        )
+    """)
+
+    # Insert schemes
+    for s in schemes:
+        cur.execute("""
+            INSERT INTO schemes (
+                id, nameEn, nameHi, nameLocal, category, ministryEn,
+                descriptionEn, descriptionHi, benefitAmount, benefitType,
+                targetStates, targetGender, targetCategory,
+                portalUrl, helplineNumber, confidenceScore, lastVerifiedEpoch, isActive
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (
+            s["id"], s["nameEn"], s["nameHi"], s.get("nameLocal"),
+            s["category"], s["ministryEn"], s["descriptionEn"], s["descriptionHi"],
+            s.get("benefitAmount"), s["benefitType"],
+            s["targetStates"], s["targetGender"], s["targetCategory"],
+            s.get("portalUrl"), s.get("helplineNumber"),
+            s["confidenceScore"], s["lastVerifiedEpoch"], int(s["isActive"])
+        ))
+
+    # Insert rules
+    for r in rules:
+        cur.execute("""
+            INSERT INTO eligibility_rules (schemeId, field, operator, value, labelEn, labelHi)
+            VALUES (?,?,?,?,?,?)
+        """, (r["schemeId"], r["field"], r["operator"], r["value"],
+              r.get("labelEn", ""), r.get("labelHi", "")))
+
+    # Insert helplines
+    for h in helplines:
+        cur.execute("""
+            INSERT OR REPLACE INTO helpline_numbers
+                (id, nameEn, nameHi, number, category, states, available24x7, isTollFree)
+            VALUES (?,?,?,?,?,?,?,?)
+        """, (
+            h["id"], h["nameEn"], h["nameHi"], h["number"],
+            h["category"], h["states"],
+            int(h["available24x7"]), int(h["isTollFree"])
+        ))
+
+    # FTS rebuild — safer than INSERT SELECT for content tables with tokenization
+    cur.execute("INSERT INTO schemes_fts(schemes_fts) VALUES('rebuild')")
+
+    conn.commit()
+    count = cur.execute("SELECT COUNT(*) FROM schemes").fetchone()[0]
+    conn.close()
+    return count
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -145,13 +263,12 @@ def main():
     parser.add_argument(
         "--refresh-dates",
         action="store_true",
-        help="Reset all lastVerified to today and set confidenceScore=1.0 for all schemes. "
-             "Use this when your batch JSON files have old dates.",
+        help="Reset all lastVerified to today and set confidenceScore=1.0.",
     )
     args = parser.parse_args()
 
     if args.refresh_dates:
-        print("ℹ️   --refresh-dates: all confidence scores will be set to 1.0")
+        print("INFO: --refresh-dates: all confidence scores will be set to 1.0")
 
     raw_files = sorted(RAW_DIR.glob("*.json"))
     if not raw_files:
@@ -161,9 +278,8 @@ def main():
 
     all_schemes   = []
     all_rules     = []
-    all_helplines = {}   # id → helpline dict, batch files override built-ins
+    all_helplines = {}   # id → helpline dict; batch files override built-ins
 
-    # Seed with built-in helplines first
     for h in BUILTIN_HELPLINES:
         all_helplines[h["id"]] = normalise_helpline(h)
 
@@ -174,11 +290,11 @@ def main():
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
 
-        schemes    = data if isinstance(data, list) else data.get("schemes", [])
-        rules_raw  = data.get("eligibility_rules", []) if isinstance(data, dict) else []
-        helplines_raw = data.get("helplines", []) if isinstance(data, dict) else []
+        schemes_raw   = data if isinstance(data, list) else data.get("schemes", [])
+        rules_raw     = data.get("eligibility_rules", []) if isinstance(data, dict) else []
+        helplines_raw = data.get("helplines", [])         if isinstance(data, dict) else []
 
-        for raw in schemes:
+        for raw in schemes_raw:
             sid = raw.get("id")
             if not sid:
                 print(f"  WARNING: scheme missing 'id', skipping: {raw.get('name_en','?')}")
@@ -199,89 +315,33 @@ def main():
 
     helplines_list = list(all_helplines.values())
 
-    # ── Write outputs ─────────────────────────────────────────────────────────
-    out_schemes   = PROCESSED_DIR / "schemes.json"
-    out_rules     = PROCESSED_DIR / "eligibility_rules.json"
-    out_helplines = PROCESSED_DIR / "helplines.json"
-    out_stats     = PROCESSED_DIR / "stats.txt"
+    # ── Write JSON outputs ────────────────────────────────────────────────────
+    (PROCESSED_DIR / "schemes.json").write_text(
+        json.dumps(all_schemes, ensure_ascii=False, indent=2), encoding="utf-8")
+    (PROCESSED_DIR / "eligibility_rules.json").write_text(
+        json.dumps(all_rules, ensure_ascii=False, indent=2), encoding="utf-8")
+    (PROCESSED_DIR / "helplines.json").write_text(
+        json.dumps(helplines_list, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    with open(out_schemes,   "w", encoding="utf-8") as f:
-        json.dump(all_schemes,    f, ensure_ascii=False, indent=2)
-    with open(out_rules,     "w", encoding="utf-8") as f:
-        json.dump(all_rules,      f, ensure_ascii=False, indent=2)
-    with open(out_helplines, "w", encoding="utf-8") as f:
-        json.dump(helplines_list, f, ensure_ascii=False, indent=2)
+    # ── Build SQLite database ─────────────────────────────────────────────────
+    db_path = SQLITE_DIR / "pocket_sarkar.db"
+    inserted = build_sqlite(db_path, all_schemes, all_rules, helplines_list)
 
     stale = [s for s in all_schemes if s["confidenceScore"] < 0.6]
     stats = (
-        f"Build completed: {datetime.now().isoformat()}\n"
-        f"Total schemes:   {len(all_schemes)}\n"
-        f"Total rules:     {len(all_rules)}\n"
-        f"Total helplines: {len(helplines_list)}\n"
-        f"Stale (<0.6):    {len(stale)}\n"
-        f"Categories:      {sorted(set(s['category'] for s in all_schemes))}\n"
+        f"Build completed : {datetime.now().isoformat()}\n"
+        f"Schemes inserted: {inserted}\n"
+        f"Total rules     : {len(all_rules)}\n"
+        f"Total helplines : {len(helplines_list)}\n"
+        f"Stale (<0.6)    : {len(stale)}\n"
+        f"Categories      : {sorted(set(s['category'] for s in all_schemes))}\n"
+        f"SQLite output   : {db_path}\n"
     )
-    with open(out_stats, "w") as f:
-        f.write(stats)
-    import sqlite3
+    (PROCESSED_DIR / "stats.txt").write_text(stats)
 
-    # ... [existing JSON writing code] ...
-
-    # ── Phase 2: Generate SQLite Database ─────────────────────────────────────
-    sqlite_dir = ROOT / "data" / "schemes" / "sqlite"
-    sqlite_dir.mkdir(parents=True, exist_ok=True)
-    db_path = sqlite_dir / "pocket_sarkar.db"
-    
-    # Remove old DB if exists
-    if db_path.exists():
-        db_path.unlink()
-
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-
-    # Create Tables
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS schemes (
-            id TEXT PRIMARY KEY NOT NULL, nameEn TEXT NOT NULL, nameHi TEXT NOT NULL,
-            nameLocal TEXT, category TEXT NOT NULL, ministryEn TEXT NOT NULL,
-            descriptionEn TEXT NOT NULL, descriptionHi TEXT NOT NULL,
-            benefitAmount TEXT, benefitType TEXT NOT NULL, targetStates TEXT NOT NULL,
-            targetGender TEXT NOT NULL, targetCategory TEXT NOT NULL,
-            portalUrl TEXT, helplineNumber TEXT, confidenceScore REAL NOT NULL,
-            lastVerifiedEpoch INTEGER NOT NULL, isActive INTEGER NOT NULL
-        )
-    """)
-    cursor.execute("""
-        CREATE VIRTUAL TABLE IF NOT EXISTS schemes_fts USING FTS5(
-            nameEn, nameHi, descriptionEn, descriptionHi, category, benefitType, content='schemes'
-        )
-    """)
-
-    # Insert Schemes
-    for s in all_schemes:
-        cursor.execute("""
-            INSERT INTO schemes (
-                id, nameEn, nameHi, nameLocal, category, ministryEn, descriptionEn, 
-                descriptionHi, benefitAmount, benefitType, targetStates, targetGender, 
-                targetCategory, portalUrl, helplineNumber, confidenceScore, 
-                lastVerifiedEpoch, isActive
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            s["id"], s["nameEn"], s["nameHi"], s.get("nameLocal"), s["category"], s["ministryEn"],
-            s["descriptionEn"], s["descriptionHi"], s.get("benefitAmount"), s["benefitType"],
-            s["targetStates"], s["targetGender"], s["targetCategory"], s.get("portalUrl"),
-            s.get("helplineNumber"), s["confidenceScore"], s["lastVerifiedEpoch"], int(s["isActive"])
-        ))
-
-    # Safely populate FTS table
-    cursor.execute("INSERT INTO schemes_fts(schemes_fts) VALUES('rebuild')")
-
-    conn.commit()
-    conn.close()
-
-    print(f"SQLite database generated at: {db_path}")
-    print("\n" + stats)
-    print(f"Output written to {PROCESSED_DIR}/")
+    print(f"\n{stats}")
+    print(f"JSON written to  : {PROCESSED_DIR}/")
+    print(f"SQLite written to: {db_path}")
 
 
 if __name__ == "__main__":
