@@ -91,9 +91,10 @@ dependencies {
     implementation(libs.coroutines.android)
 
     // ── Bundled SQLite with FTS5 ──────────────────────────────────────────────
-    // Samsung One UI ships a system SQLite WITHOUT fts5 compiled in.
-    // This bundles SQLite 3.45.0 with fts5 enabled so it works on all devices.
-    implementation(libs.requery.android)
+    // androidx.sqlite:sqlite-bundled ships its own modern SQLite with FTS5 enabled.
+    // Replaces requery — works on all OEMs including Samsung One UI which strips
+    // FTS5 from the system SQLite. On Google Maven, no JitPack required.
+    implementation(libs.sqlite.bundled)
 
     // ── Room — SQLite with FTS5 for scheme search ─────────────────────────────
     implementation(libs.room.runtime)
