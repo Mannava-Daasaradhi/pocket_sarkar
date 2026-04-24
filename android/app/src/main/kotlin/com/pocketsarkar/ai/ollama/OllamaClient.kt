@@ -9,8 +9,12 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
-class OllamaClient {
-
+class OllamaClient(
+    // 10.0.2.2 = emulator loopback to host machine
+    // For a real device: set to your PC's LAN IP, e.g. "http://192.168.1.42:11434"
+    // The TestQueryScreen lets the user override this at runtime.
+    private val defaultServerUrl: String = "http://10.0.2.2:11434"
+) {
     private val client = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
@@ -18,10 +22,10 @@ class OllamaClient {
 
     suspend fun generate(
         prompt: String,
-        serverUrl: String = "http://10.0.2.2:11434"
+        serverUrl: String = defaultServerUrl
     ): String = withContext(Dispatchers.IO) {
         val body = JSONObject().apply {
-            put("model", "pocket-sarkar") // the custom Modelfile name
+            put("model", "pocket-sarkar")
             put("prompt", prompt)
             put("stream", false)
         }.toString()
@@ -39,4 +43,13 @@ class OllamaClient {
             json.optString("response", "")
         }
     }
+
+    /** Quick reachability ping — used by TestQueryScreen to validate the URL. */
+    suspend fun ping(serverUrl: String = defaultServerUrl): Boolean =
+        withContext(Dispatchers.IO) {
+            try {
+                val req = Request.Builder().url("$serverUrl/api/tags").get().build()
+                client.newCall(req).execute().use { it.isSuccessful }
+            } catch (_: Exception) { false }
+        }
 }

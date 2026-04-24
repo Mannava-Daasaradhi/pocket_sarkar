@@ -8,21 +8,22 @@ import com.pocketsarkar.ai.ollama.OllamaClient
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-class AiRouter(private val context: Context) {
-
+class AiRouter(
+    private val context: Context,
+    // Overridable at runtime — TestQueryScreen passes the user-typed IP
+    private val ollamaServerUrl: String = "http://10.0.2.2:11434"
+) {
     val gemmaEngine = GemmaEngine(context)
-    private val ollamaClient = OllamaClient()
+    val ollamaClient = OllamaClient(defaultServerUrl = ollamaServerUrl)
 
-    // Single entry point for all modules — DO NOT call GemmaEngine/OllamaClient directly
     suspend fun generate(prompt: String): String {
         return when {
             gemmaEngine.isModelAvailable() -> gemmaEngine.generate(prompt)
-            networkAvailable() -> ollamaClient.generate(prompt)
+            networkAvailable()             -> ollamaClient.generate(prompt)
             else -> "Abhi offline hain. Kripya model download karein ya internet connect karein."
         }
     }
 
-    // Streaming version — emits partial tokens
     fun generateStreaming(prompt: String): Flow<String> {
         return if (gemmaEngine.isModelAvailable()) {
             gemmaEngine.generateStreaming(prompt)
@@ -33,23 +34,19 @@ class AiRouter(private val context: Context) {
                 } else {
                     "Abhi offline hain. Kripya model download karein ya internet connect karein."
                 }
-                emit(response) // Ollama is non-streaming here — emits full response at once
+                emit(response)
             }
         }
     }
 
-    fun modelSource(): String {
-        return if (gemmaEngine.isModelAvailable()) "on-device (Gemma 4 E4B)" else "Ollama (server)"
-    }
+    fun modelSource(): String =
+        if (gemmaEngine.isModelAvailable()) "on-device (Gemma 4 E4B)" else "Ollama (server)"
 
     private fun networkAvailable(): Boolean {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val network = cm.activeNetwork ?: return false
-        val caps = cm.getNetworkCapabilities(network) ?: return false
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork ?: return false) ?: return false
         return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
-    fun release() {
-        gemmaEngine.release()
-    }
+    fun release() { gemmaEngine.release() }
 }
