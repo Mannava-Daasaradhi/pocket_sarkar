@@ -2,7 +2,6 @@
 
 import android.content.Context
 import android.graphics.Bitmap
-import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
@@ -22,24 +21,19 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * GemmaEngine — wraps the LiteRT-LM 0.9.0-alpha01 Android SDK.
+ * GemmaEngine — wraps LiteRT-LM 0.9.0-alpha01.
  *
- * Verified API surface for 0.9.0-alpha01 (from compile errors + official docs):
- *   EngineConfig(modelPath, backend, cacheDir)
- *   Backend.CPU()                          ← constructor, not object singleton
- *   SamplerConfig(topK: Int, topP: Double, temperature: Float)
- *   ConversationConfig(
- *       systemMessage: Message?,           ← NOT systemInstruction / Contents
- *       initialMessages: List<Message>?,
- *       samplerConfig: SamplerConfig?
- *   )
- *   Message.of(text: String): Message      ← user turn
- *   Message.user(text: String): Message    ← explicit user role
- *   Message.model(text: String): Message   ← explicit assistant role
- *   Message.toString(): String             ← get text content (no .text property)
- *   sendMessage(message: Message): Message
- *   sendMessageAsync(message: Message): Flow<Message>
- *   Content.Text(text), Content.ImageBytes(bytes) ← multi-part (no Contents wrapper)
+ * Exact API derived from compiler errors (ground truth):
+ *   EngineConfig(modelPath, cacheDir)         — no backend param; defaults to CPU
+ *   SamplerConfig(topK: Int, topP: Double, temperature: Double)  — all Double
+ *   ConversationConfig(systemMessage, samplerConfig)  — NO initialMessages in alpha01
+ *   Message.of(text: String): Message         — only factory that exists
+ *   sendMessage(Message): Message
+ *   sendMessageAsync(Message): Flow<Message>
+ *   Message.toString() gives the response text
+ *
+ * Conversation history: injected into the system prompt string as "Previous turns:"
+ * since initialMessages is not available in this alpha.
  */
 @Singleton
 class GemmaEngine @Inject constructor(
@@ -51,19 +45,19 @@ class GemmaEngine @Inject constructor(
     val modelPath: String =
         context.getExternalFilesDir(null)?.absolutePath + "/models/gemma-4-E4B-it-litert-lm.litertlm"
 
-    // topP must be Double in 0.9.0-alpha01, temperature is Float
-    private val defaultSampler = SamplerConfig(topK = 40, topP = 0.95, temperature = 0.8f)
+    // All SamplerConfig params are Double in 0.9.0-alpha01
+    private val defaultSampler = SamplerConfig(topK = 40, topP = 0.95, temperature = 0.8)
 
-    private val systemPromptText =
+    private val baseSystemPrompt =
         "You are Pocket Sarkar, a helpful AI assistant for Indian citizens. " +
         "Answer in simple Hindi or English based on the user's language."
 
     /** Public so callers (DocumentDecoder, SchemeExplainer) can preload eagerly. */
     suspend fun ensureLoaded(): Engine = initMutex.withLock {
         if (engine == null) {
+            // No 'backend' param in 0.9.0-alpha01 EngineConfig — defaults to CPU
             val config = EngineConfig(
                 modelPath = modelPath,
-                backend = Backend.CPU(),
                 cacheDir = context.cacheDir.path,
             )
             val e = Engine(config)
@@ -79,7 +73,7 @@ class GemmaEngine @Inject constructor(
         val eng = ensureLoaded()
         return withContext(Dispatchers.Default) {
             val config = ConversationConfig(
-                systemMessage = Message.of(systemPromptText),
+                systemMessage = Message.of(baseSystemPrompt),
                 samplerConfig = defaultSampler,
             )
             eng.createConversation(config).use { conv ->
@@ -91,7 +85,7 @@ class GemmaEngine @Inject constructor(
     fun generateStreaming(prompt: String): Flow<String> = flow {
         val eng = ensureLoaded()
         val config = ConversationConfig(
-            systemMessage = Message.of(systemPromptText),
+            systemMessage = Message.of(baseSystemPrompt),
             samplerConfig = defaultSampler,
         )
         eng.createConversation(config).use { conv ->
@@ -104,6 +98,11 @@ class GemmaEngine @Inject constructor(
 
     // ── Rich API (used by SchemeExplainer, DocumentDecoder) ──────────────────
 
+    /**
+     * Non-streaming with custom system prompt + history.
+     * History is serialised into the system prompt since ConversationConfig
+     * has no initialMessages param in 0.9.0-alpha01.
+     */
     suspend fun generate(
         systemPrompt: String,
         userPrompt: String,
@@ -111,14 +110,9 @@ class GemmaEngine @Inject constructor(
     ): String {
         val eng = ensureLoaded()
         return withContext(Dispatchers.Default) {
+            val fullSystem = buildSystemWithHistory(systemPrompt, conversationHistory)
             val config = ConversationConfig(
-                systemMessage = Message.of(systemPrompt),
-                initialMessages = conversationHistory.map { turn ->
-                    when (turn.role) {
-                        ChatRole.USER      -> Message.user(turn.content)
-                        ChatRole.ASSISTANT -> Message.model(turn.content)
-                    }
-                },
+                systemMessage = Message.of(fullSystem),
                 samplerConfig = defaultSampler,
             )
             eng.createConversation(config).use { conv ->
@@ -127,20 +121,16 @@ class GemmaEngine @Inject constructor(
         }
     }
 
+    /** Streaming with custom system prompt + history. */
     fun generateStream(
         systemPrompt: String,
         userPrompt: String,
         conversationHistory: List<ChatTurn> = emptyList()
     ): Flow<String> = flow {
         val eng = ensureLoaded()
+        val fullSystem = buildSystemWithHistory(systemPrompt, conversationHistory)
         val config = ConversationConfig(
-            systemMessage = Message.of(systemPrompt),
-            initialMessages = conversationHistory.map { turn ->
-                when (turn.role) {
-                    ChatRole.USER      -> Message.user(turn.content)
-                    ChatRole.ASSISTANT -> Message.model(turn.content)
-                }
-            },
+            systemMessage = Message.of(fullSystem),
             samplerConfig = defaultSampler,
         )
         eng.createConversation(config).use { conv ->
@@ -153,7 +143,7 @@ class GemmaEngine @Inject constructor(
 
     /**
      * Vision + text streaming (DocumentDecoder).
-     * Multipart message: Content.ImageBytes + Content.Text, no Contents wrapper.
+     * Multi-part message via Message.of(List<Content>).
      */
     fun generateWithImage(
         systemPrompt: String,
@@ -170,18 +160,33 @@ class GemmaEngine @Inject constructor(
             samplerConfig = defaultSampler,
         )
         eng.createConversation(config).use { conv ->
-            // Build a multi-part user message: image first, then text
-            val multipartMessage = Message.of(
+            val multipart = Message.of(
                 listOf(
                     Content.ImageBytes(imageBytes),
                     Content.Text(userPrompt),
                 )
             )
-            conv.sendMessageAsync(multipartMessage).collect { msg ->
+            conv.sendMessageAsync(multipart).collect { msg ->
                 val token = msg.toString()
                 if (token.isNotEmpty()) emit(token)
             }
         }
+    }
+
+    // Serialise history into system prompt (workaround for missing initialMessages)
+    private fun buildSystemWithHistory(
+        systemPrompt: String,
+        history: List<ChatTurn>
+    ): String {
+        if (history.isEmpty()) return systemPrompt
+        val turns = history.joinToString("\n") { turn ->
+            val role = when (turn.role) {
+                ChatRole.USER      -> "User"
+                ChatRole.ASSISTANT -> "Assistant"
+            }
+            "$role: ${turn.content}"
+        }
+        return "$systemPrompt\n\nPrevious conversation:\n$turns"
     }
 
     fun isModelAvailable(): Boolean = File(modelPath).exists()
