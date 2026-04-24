@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Content
-import com.google.ai.edge.litertlm.Contents
 import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
@@ -22,6 +21,26 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * GemmaEngine — wraps the LiteRT-LM 0.9.0-alpha01 Android SDK.
+ *
+ * Verified API surface for 0.9.0-alpha01 (from compile errors + official docs):
+ *   EngineConfig(modelPath, backend, cacheDir)
+ *   Backend.CPU()                          ← constructor, not object singleton
+ *   SamplerConfig(topK: Int, topP: Double, temperature: Float)
+ *   ConversationConfig(
+ *       systemMessage: Message?,           ← NOT systemInstruction / Contents
+ *       initialMessages: List<Message>?,
+ *       samplerConfig: SamplerConfig?
+ *   )
+ *   Message.of(text: String): Message      ← user turn
+ *   Message.user(text: String): Message    ← explicit user role
+ *   Message.model(text: String): Message   ← explicit assistant role
+ *   Message.toString(): String             ← get text content (no .text property)
+ *   sendMessage(message: Message): Message
+ *   sendMessageAsync(message: Message): Flow<Message>
+ *   Content.Text(text), Content.ImageBytes(bytes) ← multi-part (no Contents wrapper)
+ */
 @Singleton
 class GemmaEngine @Inject constructor(
     @ApplicationContext private val context: Context
@@ -32,9 +51,14 @@ class GemmaEngine @Inject constructor(
     val modelPath: String =
         context.getExternalFilesDir(null)?.absolutePath + "/models/gemma-4-E4B-it-litert-lm.litertlm"
 
-    private val defaultSampler = SamplerConfig(topK = 40, temperature = 0.8f)
+    // topP must be Double in 0.9.0-alpha01, temperature is Float
+    private val defaultSampler = SamplerConfig(topK = 40, topP = 0.95, temperature = 0.8f)
 
-    // Public so callers (DocumentDecoder, SchemeExplainer) can preload eagerly
+    private val systemPromptText =
+        "You are Pocket Sarkar, a helpful AI assistant for Indian citizens. " +
+        "Answer in simple Hindi or English based on the user's language."
+
+    /** Public so callers (DocumentDecoder, SchemeExplainer) can preload eagerly. */
     suspend fun ensureLoaded(): Engine = initMutex.withLock {
         if (engine == null) {
             val config = EngineConfig(
@@ -55,14 +79,11 @@ class GemmaEngine @Inject constructor(
         val eng = ensureLoaded()
         return withContext(Dispatchers.Default) {
             val config = ConversationConfig(
-                systemInstruction = Contents.of(
-                    "You are Pocket Sarkar, a helpful AI assistant for Indian citizens. " +
-                    "Answer in simple Hindi or English based on the user's language."
-                ),
+                systemMessage = Message.of(systemPromptText),
                 samplerConfig = defaultSampler,
             )
             eng.createConversation(config).use { conv ->
-                conv.sendMessage(prompt).text ?: ""
+                conv.sendMessage(Message.of(prompt)).toString()
             }
         }
     }
@@ -70,15 +91,12 @@ class GemmaEngine @Inject constructor(
     fun generateStreaming(prompt: String): Flow<String> = flow {
         val eng = ensureLoaded()
         val config = ConversationConfig(
-            systemInstruction = Contents.of(
-                "You are Pocket Sarkar, a helpful AI assistant for Indian citizens. " +
-                "Answer in simple Hindi or English based on the user's language."
-            ),
+            systemMessage = Message.of(systemPromptText),
             samplerConfig = defaultSampler,
         )
         eng.createConversation(config).use { conv ->
-            conv.sendMessageAsync(prompt).collect { message ->
-                val token = message.text ?: ""
+            conv.sendMessageAsync(Message.of(prompt)).collect { msg ->
+                val token = msg.toString()
                 if (token.isNotEmpty()) emit(token)
             }
         }
@@ -86,10 +104,6 @@ class GemmaEngine @Inject constructor(
 
     // ── Rich API (used by SchemeExplainer, DocumentDecoder) ──────────────────
 
-    /**
-     * Non-streaming call with custom system prompt and conversation history.
-     * History is replayed via LiteRT-LM's initialMessages — no extra model calls.
-     */
     suspend fun generate(
         systemPrompt: String,
         userPrompt: String,
@@ -98,24 +112,21 @@ class GemmaEngine @Inject constructor(
         val eng = ensureLoaded()
         return withContext(Dispatchers.Default) {
             val config = ConversationConfig(
-                systemInstruction = Contents.of(systemPrompt),
+                systemMessage = Message.of(systemPrompt),
                 initialMessages = conversationHistory.map { turn ->
                     when (turn.role) {
-                        ChatRole.USER -> Message.user(turn.content)
+                        ChatRole.USER      -> Message.user(turn.content)
                         ChatRole.ASSISTANT -> Message.model(turn.content)
                     }
                 },
                 samplerConfig = defaultSampler,
             )
             eng.createConversation(config).use { conv ->
-                conv.sendMessage(userPrompt).text ?: ""
+                conv.sendMessage(Message.of(userPrompt)).toString()
             }
         }
     }
 
-    /**
-     * Streaming call with custom system prompt and conversation history.
-     */
     fun generateStream(
         systemPrompt: String,
         userPrompt: String,
@@ -123,18 +134,18 @@ class GemmaEngine @Inject constructor(
     ): Flow<String> = flow {
         val eng = ensureLoaded()
         val config = ConversationConfig(
-            systemInstruction = Contents.of(systemPrompt),
+            systemMessage = Message.of(systemPrompt),
             initialMessages = conversationHistory.map { turn ->
                 when (turn.role) {
-                    ChatRole.USER -> Message.user(turn.content)
+                    ChatRole.USER      -> Message.user(turn.content)
                     ChatRole.ASSISTANT -> Message.model(turn.content)
                 }
             },
             samplerConfig = defaultSampler,
         )
         eng.createConversation(config).use { conv ->
-            conv.sendMessageAsync(userPrompt).collect { message ->
-                val token = message.text ?: ""
+            conv.sendMessageAsync(Message.of(userPrompt)).collect { msg ->
+                val token = msg.toString()
                 if (token.isNotEmpty()) emit(token)
             }
         }
@@ -142,7 +153,7 @@ class GemmaEngine @Inject constructor(
 
     /**
      * Vision + text streaming (DocumentDecoder).
-     * Converts Bitmap → JPEG bytes → LiteRT-LM Content.ImageBytes.
+     * Multipart message: Content.ImageBytes + Content.Text, no Contents wrapper.
      */
     fun generateWithImage(
         systemPrompt: String,
@@ -155,17 +166,19 @@ class GemmaEngine @Inject constructor(
             baos.toByteArray()
         }
         val config = ConversationConfig(
-            systemInstruction = Contents.of(systemPrompt),
+            systemMessage = Message.of(systemPrompt),
             samplerConfig = defaultSampler,
         )
         eng.createConversation(config).use { conv ->
-            conv.sendMessageAsync(
-                Contents.of(
+            // Build a multi-part user message: image first, then text
+            val multipartMessage = Message.of(
+                listOf(
                     Content.ImageBytes(imageBytes),
                     Content.Text(userPrompt),
                 )
-            ).collect { message ->
-                val token = message.text ?: ""
+            )
+            conv.sendMessageAsync(multipartMessage).collect { msg ->
+                val token = msg.toString()
                 if (token.isNotEmpty()) emit(token)
             }
         }
