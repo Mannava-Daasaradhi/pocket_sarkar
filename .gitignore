@@ -60,3 +60,11 @@ judge.md
 PROJECT_PLAN.md
 android/local.properties
 android/.idea/
+
+
+# Model files — too large for git
+android/app/src/main/assets/models/
+android/app/src/main/assets/*.litertlm
+android/app/src/main/assets/*.task
+*.litertlm
+*.task

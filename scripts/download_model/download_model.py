@@ -1,270 +1,112 @@
 #!/usr/bin/env python3
 """
-scripts/download_model/download_model.py
-─────────────────────────────────────────
-Phase 3 — Gemma 4 Model Downloader
-
-Downloads the MediaPipe-format Gemma 4 model from Kaggle and places it
-where GemmaEngine.kt expects it.
+Download Gemma 4 E4B LiteRT-LM model for Pocket Sarkar.
 
 Usage:
-    python scripts/download_model/download_model.py --model e4b-int4
-    python scripts/download_model/download_model.py --model 26b --output /custom/path/
-
-Model sizes (approximate):
-    e4b-int4   ~2.5 GB   → Android on-device (MediaPipe .task)
-    26b        ~16 GB    → Raspberry Pi / server (GGUF via Ollama)
-
-Prerequisites:
-    pip install kaggle tqdm requests
-    Set KAGGLE_USERNAME and KAGGLE_KEY env vars (or place ~/.kaggle/kaggle.json).
-    Accept Gemma licence at: https://www.kaggle.com/models/google/gemma
+    python download_model.py --model e4b
+    python download_model.py --model e4b --push-to-device   # adb push after download
 """
 
 import argparse
 import hashlib
-import json
 import os
-import shutil
+import subprocess
 import sys
-import zipfile
-from pathlib import Path
-
-try:
-    import requests
-    from tqdm import tqdm
-except ImportError:
-    print("Missing dependencies. Run:  pip install requests tqdm kaggle")
-    sys.exit(1)
-
-# ── Model catalogue ───────────────────────────────────────────────────────────
 
 MODELS = {
-    "e4b-int4": {
-        "description": "Gemma 4 E4B INT4 — Android on-device via MediaPipe",
-        "kaggle_handle": "google/gemma/mediapipe/gemma-4-e4b-it-gpu-int4",
-        "filename":      "gemma4-e4b-it-int4.task",
-        "size_hint":     "~2.5 GB",
-        "target_subdir": "android/app/src/main/assets/models",
-        "format":        "mediapipe_task",
-        "note": (
-            "Place the .task file at:\n"
-            "  android/app/src/main/assets/models/gemma4-e4b-it-int4.task\n"
-            "OR push it to the device at:\n"
-            "  /sdcard/Android/data/com.pocketsarkar/files/models/gemma4-e4b-it-int4.task\n"
-            "(External storage path is preferred for large files — avoids APK size limits.)"
-        ),
-    },
-    "26b": {
-        "description": "Gemma 4 26B — Raspberry Pi / demo server via Ollama (GGUF)",
-        "kaggle_handle": "google/gemma/gguf/gemma-4-27b-it-q4_k_m",
-        "filename":      "gemma-4-27b-it-q4_k_m.gguf",
-        "size_hint":     "~16 GB",
-        "target_subdir": "deployment/ollama/models",
-        "format":        "gguf",
-        "note": (
-            "Place the .gguf file in deployment/ollama/models/\n"
-            "Then run:  ollama create gemma4:26b -f deployment/ollama/Modelfile"
-        ),
-    },
+    "e4b": {
+        "repo": "litert-community/gemma-4-E4B-it-litert-lm",
+        "filename": "gemma-4-E4B-it-litert-lm.litertlm",
+        "size_gb": 3.65,
+        # SHA256 will be verified if HF provides it; skip check if None
+        "sha256": None,
+    }
 }
 
-ROOT = Path(__file__).resolve().parent.parent.parent
+DEVICE_PATH = "/sdcard/Android/data/com.pocketsarkar/files/models/"
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
-
-def check_kaggle_credentials():
-    """Verify Kaggle API credentials are available."""
-    kaggle_json = Path.home() / ".kaggle" / "kaggle.json"
-    has_env = os.environ.get("KAGGLE_USERNAME") and os.environ.get("KAGGLE_KEY")
-    has_file = kaggle_json.exists()
-
-    if not has_env and not has_file:
-        print("\n❌  Kaggle credentials not found.")
-        print("    Option 1 — Environment variables:")
-        print("        export KAGGLE_USERNAME=your_username")
-        print("        export KAGGLE_KEY=your_api_key")
-        print("    Option 2 — Credential file:")
-        print("        Download kaggle.json from https://www.kaggle.com/settings → API")
-        print("        Place it at ~/.kaggle/kaggle.json")
-        print("    Then accept the Gemma licence at:")
-        print("        https://www.kaggle.com/models/google/gemma")
-        sys.exit(1)
-
-
-def md5_file(path: Path, chunk=1 << 20) -> str:
-    h = hashlib.md5()
-    with open(path, "rb") as f:
-        for block in iter(lambda: f.read(chunk), b""):
-            h.update(block)
-    return h.hexdigest()
-
-
-def download_with_kaggle_api(handle: str, dest_dir: Path, filename: str) -> Path:
-    """
-    Download a Kaggle model variation using the Kaggle HTTP API directly.
-    handle format: "owner/model/framework/variation"
-    """
+def download_hf(repo: str, filename: str, dest_dir: str) -> str:
+    """Download a file from HuggingFace Hub using huggingface_hub."""
     try:
-        import kaggle  # noqa: F401 — triggers credential setup
+        from huggingface_hub import hf_hub_download
     except ImportError:
-        print("kaggle package not found. Run:  pip install kaggle")
-        sys.exit(1)
+        print("Installing huggingface_hub…")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "huggingface_hub", "tqdm"])
+        from huggingface_hub import hf_hub_download
 
-    parts = handle.split("/")
-    if len(parts) != 4:
-        print(f"❌  Invalid Kaggle handle: {handle}")
-        sys.exit(1)
+    print(f"\nDownloading {filename} from {repo}…")
+    print(f"File size: ~{MODELS['e4b']['size_gb']} GB — this will take a while.\n")
 
-    owner, model, framework, variation = parts
-    dest_dir.mkdir(parents=True, exist_ok=True)
-
-    print(f"\n📥  Downloading via Kaggle API...")
-    print(f"    Handle   : {handle}")
-    print(f"    Dest     : {dest_dir}")
-
-    # Use kaggle CLI as subprocess (most reliable across API versions)
-    import subprocess
-    cmd = [
-        sys.executable, "-m", "kaggle", "models", "instances", "versions",
-        "download",
-        f"{owner}/{model}/{framework}/{variation}",
-        "--path", str(dest_dir),
-        "--untar",
-    ]
-    result = subprocess.run(cmd, capture_output=False)
-    if result.returncode != 0:
-        print(f"\n❌  Kaggle download failed (exit {result.returncode})")
-        print("    Make sure you have accepted the model licence at:")
-        print("    https://www.kaggle.com/models/google/gemma")
-        sys.exit(1)
-
-    # Find the downloaded file (Kaggle may unpack into subdirs)
-    candidates = list(dest_dir.rglob(f"*.task")) + list(dest_dir.rglob(f"*.gguf"))
-    if not candidates:
-        # Fallback: look for any large binary
-        candidates = [p for p in dest_dir.rglob("*") if p.is_file() and p.stat().st_size > 100_000_000]
-
-    if candidates:
-        downloaded = candidates[0]
-        final = dest_dir / filename
-        if downloaded != final:
-            shutil.move(str(downloaded), str(final))
-        return final
-
-    print("⚠️   Download completed but could not locate model file. Check:", dest_dir)
-    return dest_dir / filename
+    path = hf_hub_download(
+        repo_id=repo,
+        filename=filename,
+        local_dir=dest_dir,
+        local_dir_use_symlinks=False,
+    )
+    return path
 
 
-def verify_and_report(model_path: Path, model_info: dict):
-    if not model_path.exists():
-        print(f"\n⚠️   File not found at {model_path}")
-        return
-
-    size_mb = model_path.stat().st_size / (1024 * 1024)
-    print(f"\n✅  Model downloaded successfully!")
-    print(f"    Path : {model_path}")
-    print(f"    Size : {size_mb:.1f} MB")
-    print(f"\n📋  Next steps:")
-    print(f"    {model_info['note']}")
-
-
-def push_to_device(model_path: Path, filename: str):
-    """Optional: push model to Android device via ADB."""
-    import subprocess
-    device_path = f"/sdcard/Android/data/com.pocketsarkar/files/models/{filename}"
-    print(f"\n📱  Pushing to Android device via ADB...")
-    print(f"    {model_path} → {device_path}")
-
-    # Create the directory on device
-    subprocess.run(["adb", "shell", "mkdir", "-p",
-                    "/sdcard/Android/data/com.pocketsarkar/files/models/"],
-                   check=False)
-
-    result = subprocess.run(["adb", "push", str(model_path), device_path])
-    if result.returncode == 0:
-        print("✅  Pushed to device successfully!")
-        print(f"    GemmaEngine will find it at getExternalFilesDir(null)/models/{filename}")
-    else:
-        print("❌  ADB push failed. Is your device connected with USB debugging enabled?")
+def verify_sha256(filepath: str, expected: str) -> bool:
+    print("Verifying SHA256…")
+    sha = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            sha.update(chunk)
+    actual = sha.hexdigest()
+    if actual != expected:
+        print(f"  FAIL — expected {expected}")
+        print(f"         got      {actual}")
+        return False
+    print("  OK")
+    return True
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+def adb_push(local_path: str):
+    print(f"\nPushing to device at {DEVICE_PATH}…")
+    subprocess.run(["adb", "shell", f"mkdir -p {DEVICE_PATH}"], check=True)
+    subprocess.run(["adb", "push", local_path, DEVICE_PATH], check=True)
+    print("Done — model is on device.")
+
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Download Gemma 4 model for Pocket Sarkar",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="\n".join(
-            f"  --model {k:10s}  {v['description']}  ({v['size_hint']})"
-            for k, v in MODELS.items()
-        ),
-    )
-    parser.add_argument(
-        "--model",
-        choices=list(MODELS.keys()),
-        required=True,
-        help="Which model to download",
-    )
-    parser.add_argument(
-        "--output",
-        type=Path,
-        default=None,
-        help="Override destination directory (default: auto-detected from repo root)",
-    )
+    parser = argparse.ArgumentParser(description="Download Pocket Sarkar model")
+    parser.add_argument("--model", choices=list(MODELS.keys()), default="e4b")
     parser.add_argument(
         "--push-to-device",
         action="store_true",
-        help="After download, push to connected Android device via ADB (e4b-int4 only)",
+        help="Push to Android device via adb after download",
     )
     parser.add_argument(
-        "--skip-download",
-        action="store_true",
-        help="Skip download and just print instructions (useful for CI)",
+        "--dest",
+        default="android/app/src/main/assets/models",
+        help="Local destination directory",
     )
     args = parser.parse_args()
 
     info = MODELS[args.model]
-    dest_dir = args.output or (ROOT / info["target_subdir"])
+    os.makedirs(args.dest, exist_ok=True)
 
-    print("=" * 60)
-    print("  Pocket Sarkar — Model Downloader")
-    print("=" * 60)
-    print(f"  Model   : {args.model}")
-    print(f"  Format  : {info['format']}")
-    print(f"  Size    : {info['size_hint']}")
-    print(f"  Dest    : {dest_dir}")
-    print("=" * 60)
+    dest_path = os.path.join(args.dest, info["filename"])
+    if os.path.exists(dest_path):
+        size_mb = os.path.getsize(dest_path) / (1024 * 1024)
+        print(f"Model already exists at {dest_path} ({size_mb:.0f} MB)")
+    else:
+        dest_path = download_hf(info["repo"], info["filename"], args.dest)
 
-    if args.skip_download:
-        print("\nℹ️   --skip-download set. Instructions only:\n")
-        print(info["note"])
-        return
+    if info["sha256"]:
+        if not verify_sha256(dest_path, info["sha256"]):
+            sys.exit(1)
+    else:
+        print("(SHA256 checksum not available for this model — skipping)")
 
-    # Warn about APK size for assets path
-    if "assets/models" in str(dest_dir) and args.model == "e4b-int4":
-        print("\n⚠️   WARNING: Placing a 2.5 GB file in android/app/src/main/assets/")
-        print("    will make the APK huge and may exceed Play Store limits.")
-        print("    For development, prefer --push-to-device to push directly to device.")
-        print("    Production: serve via DownloadManager or ship as OBB expansion file.")
-        confirm = input("\n    Continue anyway? [y/N]: ").strip().lower()
-        if confirm != "y":
-            print("\nAborted. Run with --push-to-device to push to a connected device instead.")
-            sys.exit(0)
-
-    check_kaggle_credentials()
-
-    model_path = download_with_kaggle_api(
-        handle=info["kaggle_handle"],
-        dest_dir=dest_dir,
-        filename=info["filename"],
-    )
-
-    verify_and_report(model_path, info)
-
-    if args.push_to_device and args.model == "e4b-int4" and model_path.exists():
-        push_to_device(model_path, info["filename"])
+    if args.push_to_device:
+        adb_push(dest_path)
+    else:
+        print(f"\nModel saved to: {dest_path}")
+        print("\nTo push to Android device/emulator, run:")
+        print(f"  adb shell mkdir -p {DEVICE_PATH}")
+        print(f"  adb push \"{dest_path}\" {DEVICE_PATH}")
 
 
 if __name__ == "__main__":

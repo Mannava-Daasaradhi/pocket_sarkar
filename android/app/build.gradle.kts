@@ -65,7 +65,7 @@ android {
     }
 
     androidResources {
-        noCompress += listOf("tflite", "task", "bin")
+        noCompress += listOf("tflite", "litertlm", "bin")
     }
     testOptions {
         unitTests {
@@ -115,7 +115,8 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
 
     // ── MediaPipe LLM Inference — Gemma 4 E4B on-device ──────────────────────
-    implementation(libs.mediapipe.tasks.genai)
+    //implementation(libs.mediapipe.tasks.genai)
+    implementation(libs.litertlm.android)
 
     // ── CameraX — document scanning ───────────────────────────────────────────
     implementation(libs.camera.core)
@@ -133,6 +134,8 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
     implementation(libs.gson)
+
+    
 
     // ── Debug tools ───────────────────────────────────────────────────────────
     debugImplementation(libs.compose.ui.tooling)

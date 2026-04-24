@@ -6,7 +6,7 @@ androidxTestCore = "1.5.0"
 # Build
 agp                     = "8.4.2"
 kotlin                  = "2.0.0"
-
+litertlm = "0.9.0-alpha01"
 # Compose
 composeBom              = "2024.06.00"
 activityCompose         = "1.9.0"
@@ -81,7 +81,7 @@ room-compiler                       = { group = "androidx.room", name = "room-co
 sqlite-jdbc = { group = "androidx.sqlite", name = "sqlite-jdbc", version = "2.5.0" }
 # androidx.sqlite bundled SQLite — Google Maven, FTS5 on all devices, no JitPack
 sqlite-bundled                      = { group = "androidx.sqlite", name = "sqlite-bundled", version.ref = "androidxSqliteBundled" }
-
+litertlm-android = { group = "com.google.ai.edge.litertlm", name = "litertlm-android", version.ref = "litertlm" }
 # Hilt
 hilt-android                        = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler                       = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }

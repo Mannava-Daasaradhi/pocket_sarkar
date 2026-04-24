@@ -3,6 +3,7 @@ package com.pocketsarkar.di
 import android.content.Context
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import com.pocketsarkar.ai.AiRouter
 import com.pocketsarkar.db.PocketSarkarDatabase
 import dagger.Module
 import dagger.Provides
@@ -25,7 +26,7 @@ object AppModule {
             PocketSarkarDatabase::class.java,
             "pocket_sarkar.db"
         )
-            .setDriver(BundledSQLiteDriver())   // bundled SQLite — Samsung strips FTS5 from system SQLite
+            .setDriver(BundledSQLiteDriver())
             .addCallback(PocketSarkarDatabase.ON_CREATE_CALLBACK)
             .addMigrations(
                 PocketSarkarDatabase.MIGRATION_1_2,
@@ -38,4 +39,9 @@ object AppModule {
     @Provides
     @Singleton
     fun provideSchemeDao(db: PocketSarkarDatabase) = db.schemeDao()
+
+    // AiRouter wraps GemmaEngine + OllamaClient — single AI entry point
+    @Provides
+    @Singleton
+    fun provideAiRouter(@ApplicationContext context: Context): AiRouter = AiRouter(context)
 }

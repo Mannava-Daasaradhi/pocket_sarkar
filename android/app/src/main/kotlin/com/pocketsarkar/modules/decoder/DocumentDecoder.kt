@@ -2,13 +2,14 @@ package com.pocketsarkar.modules.decoder
 
 import android.content.Context
 import android.graphics.Bitmap
-import com.pocketsarkar.ai.mediapipe.GemmaEngine
+import com.pocketsarkar.ai.mediapipe.GemmaEngine   // ← unchanged, but now @Inject-able
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+
 
 /**
  * Document Decoder module.
