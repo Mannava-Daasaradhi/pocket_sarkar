@@ -1,0 +1,71 @@
+PERSONAL LOAN TERMS AND CONDITIONS
+QuickCash Finance Private Limited
+Loan Reference: QC/2025/PLN/048271
+
+BORROWER DETAILS
+Name: Santosh Kumar Reddy
+Aadhaar: XXXX-XXXX-7823
+PAN: ABCDE1234F
+Mobile: 9876543210
+
+LOAN DETAILS
+Principal Amount: Rs. 1,50,000/-
+Disbursement Amount: Rs. 1,33,500/- (after deduction of Processing Fee Rs. 7,500/-,
+    Insurance Premium Rs. 4,500/-, Documentation Fee Rs. 2,500/-, Platform Fee Rs. 2,000/-)
+Stated Interest Rate: 18% per annum
+Effective Interest Rate (APR): Not disclosed in this document.
+Tenure: 24 months
+EMI: Rs. 7,490/- per month
+
+REPAYMENT AND PENALTY TERMS
+
+1. REPAYMENT: The Borrower shall repay the Loan through EMIs via the standing NACH
+   mandate. The Borrower hereby irrevocably authorizes QuickCash Finance to present
+   a NACH debit on the repayment date without further instruction.
+
+2. BOUNCE CHARGE: If any EMI payment is returned unpaid, a bounce charge of Rs. 1,500/-
+   per occurrence shall be levied immediately.
+
+3. PENAL INTEREST — COMPOUND COMPOUNDING: In case of any default or delayed payment:
+   (a) Penal interest at 48% per annum shall be charged on the overdue EMI amount.
+   (b) The penal interest shall itself compound monthly on a reducing balance basis.
+   (c) Penal interest shall also be charged on previously accumulated penal interest
+       (penalty-on-penalty), which shall continue to accumulate until full repayment.
+   (d) In addition to penal interest, a daily default charge of Rs. 250/- per day
+       will be levied from the first day of default.
+   (e) All outstanding amounts including principal, regular interest, penal interest,
+       and charges shall be immediately due and payable upon any single default.
+
+4. PREPAYMENT: No prepayment is permitted within the first 12 months. After 12 months,
+   a prepayment charge of 5% on the outstanding principal shall apply.
+
+5. FORECLOSURE: Foreclosure is not permitted. The Borrower must repay all EMIs as
+   scheduled regardless of the Borrower's financial situation.
+
+DATA SHARING AND COLLECTION
+6. The Borrower irrevocably consents to QuickCash Finance sharing all personal data
+   including financial information, transaction history, contacts list, and location
+   data with group companies, affiliates, marketing partners, collection agencies,
+   and any third party at QuickCash Finance's sole discretion.
+7. QuickCash Finance's mobile application will access the Borrower's phone contacts,
+   call logs, and SMS data. In the event of default, QuickCash Finance may contact
+   persons in the Borrower's contact list to recover dues.
+
+PERSONAL GUARANTEE
+8. The Borrower's family members who co-signed the KYC form are hereby deemed to be
+   co-guarantors of this Loan and are jointly and severally liable for repayment.
+
+DISPUTE RESOLUTION
+9. Any dispute shall be settled by arbitration in Mumbai only, with the arbitrator
+   exclusively appointed by QuickCash Finance. The Borrower waives the right to approach
+   any consumer court, banking ombudsman, or civil court for any dispute related to
+   this Loan.
+
+MODIFICATION
+10. QuickCash Finance reserves the right to modify interest rates, charges, and terms
+    at any time without notice. Changes shall be effective immediately upon posting
+    on the company website.
+
+I/We have read and agree to all terms and conditions.
+
+Borrower Signature: ________________   Date: ___________
