@@ -5,25 +5,16 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.pocketsarkar.ui.screens.HomeScreen
-import com.pocketsarkar.ui.screens.DecoderScreen
-import com.pocketsarkar.ui.screens.SchemesScreen
-import com.pocketsarkar.ui.screens.RadarScreen
-import com.pocketsarkar.ui.screens.RightsScreen
-import com.pocketsarkar.ui.screens.TestQueryScreen
+import com.pocketsarkar.ui.screens.*
 
-/**
- * All navigation destinations in one place.
- * Add new routes here — never hardcode strings elsewhere.
- */
 sealed class Screen(val route: String) {
+    data object ModelSetup : Screen("model_setup") // Phase 5 — first-launch gate
     data object Home    : Screen("home")
-    data object Decoder : Screen("decoder")      // Document Decoder
-    data object Schemes : Screen("schemes")      // Scheme Explainer
-    data object Radar   : Screen("radar")        // Opportunity Radar
-    data object Rights  : Screen("rights")       // Rights Companion
-    data object TestAi  : Screen("test_ai")      // AI test console (Phase 3)
-    // FormPilot will be added in Phase 7
+    data object Decoder : Screen("decoder")
+    data object Schemes : Screen("schemes")
+    data object Radar   : Screen("radar")
+    data object Rights  : Screen("rights")
+    data object TestAi  : Screen("test_ai")
 }
 
 @Composable
@@ -32,12 +23,19 @@ fun PocketSarkarNavHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route
+        startDestination = Screen.ModelSetup.route
     ) {
-        composable(Screen.Home.route) {
-            HomeScreen(
-                onNavigate = { screen -> navController.navigate(screen.route) }
+        composable(Screen.ModelSetup.route) {
+            ModelSetupScreen(
+                onModelReady = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.ModelSetup.route) { inclusive = true }
+                    }
+                }
             )
+        }
+        composable(Screen.Home.route) {
+            HomeScreen(onNavigate = { screen -> navController.navigate(screen.route) })
         }
         composable(Screen.Decoder.route) {
             DecoderScreen(onBack = { navController.popBackStack() })
