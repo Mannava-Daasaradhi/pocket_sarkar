@@ -26,7 +26,7 @@ room                    = "2.7.0"
 androidxSqliteBundled   = "2.5.0"
 
 # DI
-hilt                    = "2.52"
+hilt                    = "2.56"
 hiltNavigationCompose   = "1.2.0"
 
 # AI — MediaPipe LLM Inference (check https://developers.google.com/mediapipe/solutions/genai/llm_inference for latest)
