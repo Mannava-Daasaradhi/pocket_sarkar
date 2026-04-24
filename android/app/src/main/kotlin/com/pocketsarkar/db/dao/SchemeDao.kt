@@ -18,25 +18,23 @@ interface SchemeDao {
         JOIN schemes_fts fts ON s.rowid = fts.rowid
         WHERE schemes_fts MATCH :query
         AND s.isActive = 1
-        ORDER BY fts.rank
+        ORDER BY s.confidenceScore DESC
         LIMIT :limit
     """)
     suspend fun searchSchemes(query: String, limit: Int = 10): List<Scheme>
 
-    /**
-     * Phase-2 spec: FTS5 search, max 20 results, BM25 ranked.
-     * JOIN uses s.rowid = fts.rowid (NOT s.id).
-     */
     @SkipQueryVerification
     @Query("""
         SELECT s.* FROM schemes s
         JOIN schemes_fts fts ON s.rowid = fts.rowid
         WHERE schemes_fts MATCH :query
         AND s.isActive = 1
-        ORDER BY fts.rank
+        ORDER BY s.confidenceScore DESC
         LIMIT 20
     """)
     suspend fun searchByFTS(query: String): List<Scheme>
+
+    
 
     /** Get a single scheme by exact ID */
     @Query("SELECT * FROM schemes WHERE id = :id AND isActive = 1")

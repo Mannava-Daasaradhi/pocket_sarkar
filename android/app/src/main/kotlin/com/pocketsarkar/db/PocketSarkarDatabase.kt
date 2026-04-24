@@ -11,8 +11,8 @@ import com.pocketsarkar.db.entities.HelplineNumber
 import com.pocketsarkar.db.entities.Scheme
 
 // SchemeFts is intentionally excluded from entities[].
-// FTS virtual tables cause KSP [MissingType] when listed as @Database entities
-// with @Fts4/@Fts5(contentEntity=). The table is created via the onCreate callback below.
+// FTS virtual tables cause KSP [MissingType] when listed as @Database entities.
+// The table is created via the onCreate callback below.
 @Database(
     entities = [
         Scheme::class,
@@ -30,47 +30,65 @@ abstract class PocketSarkarDatabase : RoomDatabase() {
     companion object {
 
         /**
-         * Fresh installs (no prior version).
-         * Creates the FTS5 virtual table after Room creates the base tables.
-         * Seeder inserts rows AFTER this callback, so 'rebuild' here is a
-         * safe no-op on empty DB — Seeder calls rebuild again after inserts.
+         * Fresh installs — creates the FTS5 virtual table after Room creates
+         * the base tables. Seeder calls 'rebuild' again after inserts.
          */
         val ON_CREATE_CALLBACK = object : Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
-                // 1. Create a standalone FTS5 table for Robolectric tests
+                // 1. Create standalone FTS5 table
                 db.execSQL("""
                     CREATE VIRTUAL TABLE IF NOT EXISTS schemes_fts USING fts5(
                         nameEn, nameHi, descriptionEn, descriptionHi, category, benefitType
                     )
                 """.trimIndent())
-                
-                // 2. Use a trigger to auto-populate FTS5 during tests to avoid the Robolectric rebuild bug
+
+                // 2. Trigger to auto-populate FTS5 on insert (helps Robolectric tests)
                 db.execSQL("""
-                    CREATE TRIGGER IF NOT EXISTS schemes_fts_insert AFTER INSERT ON schemes BEGIN
-                        INSERT INTO schemes_fts(rowid, nameEn, nameHi, descriptionEn, descriptionHi, category, benefitType)
-                        VALUES (new.rowid, new.nameEn, new.nameHi, new.descriptionEn, new.descriptionHi, new.category, new.benefitType);
+                    CREATE TRIGGER IF NOT EXISTS schemes_fts_insert
+                    AFTER INSERT ON schemes BEGIN
+                        INSERT INTO schemes_fts(
+                            rowid, nameEn, nameHi, descriptionEn, descriptionHi,
+                            category, benefitType
+                        )
+                        VALUES (
+                            new.rowid, new.nameEn, new.nameHi, new.descriptionEn,
+                            new.descriptionHi, new.category, new.benefitType
+                        );
+                    END;
+                """.trimIndent())
+            }
+        }
+        /**
+        * Test-only callback — uses FTS4 because Robolectric's bundled SQLite
+        * on Windows does not compile in FTS5. FTS4 supports the same MATCH
+        * queries used by SchemeDao; the only loss is BM25 rank ordering,
+        * which is not tested. Production always uses FTS5 via MIGRATION_2_3.
+        */
+        val TEST_CREATE_CALLBACK = object : Callback() {
+            override fun onCreate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE VIRTUAL TABLE IF NOT EXISTS schemes_fts USING fts4(
+                        nameEn, nameHi, descriptionEn, descriptionHi, category, benefitType
+                    )
+                """.trimIndent())
+
+                db.execSQL("""
+                    CREATE TRIGGER IF NOT EXISTS schemes_fts_insert
+                    AFTER INSERT ON schemes BEGIN
+                        INSERT INTO schemes_fts(
+                            rowid, nameEn, nameHi, descriptionEn, descriptionHi,
+                            category, benefitType
+                        )
+                        VALUES (
+                            new.rowid, new.nameEn, new.nameHi, new.descriptionEn,
+                            new.descriptionHi, new.category, new.benefitType
+                        );
                     END;
                 """.trimIndent())
             }
         }
 
-            // 2. Used by the local unit tests (Bundled SQLite Driver)
-            override fun onCreate(connection: androidx.sqlite.SQLiteConnection) {
-                val createStmt = connection.prepare("""
-                    CREATE VIRTUAL TABLE IF NOT EXISTS schemes_fts USING fts5(
-                        nameEn, nameHi, descriptionEn, descriptionHi, category, benefitType,
-                        content='schemes',
-                        content_rowid='rowid'
-                    )
-                """.trimIndent())
-                try { createStmt.step() } finally { createStmt.close() }
-
-                val rebuildStmt = connection.prepare("INSERT INTO schemes_fts(schemes_fts) VALUES('rebuild')")
-                try { rebuildStmt.step() } finally { rebuildStmt.close() }
-            }
-        }
-
-        // ── Migration 1 → 2 (kept for upgrade path from old installs) ─────────
+        // ── Migration 1 → 2 ────────────────────────────────────────────────
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("DROP TABLE IF EXISTS schemes_fts")
@@ -84,27 +102,11 @@ abstract class PocketSarkarDatabase : RoomDatabase() {
             }
         }
 
-        /**
-         * Migration 2 → 3
-         *
-         * What changes:
-         *   1. Add 5 Phase-2 eligibility columns to `schemes` with safe defaults:
-         *        maxIncomeLPA  REAL    DEFAULT 0.0   (0.0 = no income limit)
-         *        minAge        INTEGER DEFAULT 0     (0 = no lower bound)
-         *        maxAge        INTEGER DEFAULT 0     (0 = no upper bound)
-         *        casteEligibility TEXT DEFAULT '[]'  (empty = open to all)
-         *        documentsRequired TEXT DEFAULT '[]'
-         *
-         *   2. Drop FTS4 virtual table, recreate as FTS5.
-         *        FTS4 → FTS5: adds BM25 ranking (ORDER BY fts.rank in DAO).
-         *        content_rowid='rowid' is explicit to match DAO JOIN condition.
-         *
-         *   3. Rebuild FTS index to cover existing 101 seeded rows.
-         *
-         * confidenceScore Float → Double: both map to SQLite REAL.
-         * No DDL change needed — Room reads the value into whichever Kotlin
-         * type the entity declares.
-         */
+        // ── Migration 2 → 3 ────────────────────────────────────────────────
+        // Changes:
+        //   1. Add 5 Phase-2 eligibility columns to `schemes` with safe defaults
+        //   2. Drop FTS4, recreate as FTS5 (BM25 ranking)
+        //   3. Rebuild FTS index
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
 
