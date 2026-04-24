@@ -84,6 +84,36 @@ class OllamaClient @Inject constructor() {
         }
     }
 
+    /**
+     * Blocking (non-streaming) inference via Ollama /api/generate.
+     * Used by AiRouter for simple single-turn queries.
+     */
+    suspend fun generate(
+        prompt: String,
+        systemPrompt: String = "",
+        serverUrl: String = baseUrl
+    ): String = withContext(Dispatchers.IO) {
+        val body = JSONObject().apply {
+            put("model", MODEL_NAME)
+            put("prompt", prompt)
+            if (systemPrompt.isNotEmpty()) put("system", systemPrompt)
+            put("stream", false)
+        }.toString().toRequestBody(JSON_MEDIA_TYPE)
+
+        val request = Request.Builder()
+            .url("$serverUrl/api/generate")
+            .post(body)
+            .build()
+
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                return@withContext "[Ollama error: ${response.code}]"
+            }
+            val json = JSONObject(response.body?.string() ?: "{}")
+            json.optString("response", "[Empty response from Ollama]")
+        }
+    }
+
     /** Check if Ollama server is reachable */
     suspend fun isReachable(): Boolean = withContext(Dispatchers.IO) {
         runCatching {

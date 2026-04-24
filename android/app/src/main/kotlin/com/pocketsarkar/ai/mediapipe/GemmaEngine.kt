@@ -37,6 +37,26 @@ class GemmaEngine @Inject constructor(
 
     val isLoaded: Boolean get() = llmInference != null
 
+    /**
+     * Returns true if the model file exists on disk and can be loaded.
+     * Does NOT load the model — use ensureLoaded() for that.
+     * AiRouter calls this to decide routing without triggering a load.
+     */
+    fun isModelAvailable(): Boolean {
+        // Check external files dir (preferred — large file, pushed via ADB)
+        val externalModel = File(context.getExternalFilesDir(null), "models/$MODEL_FILE")
+        if (externalModel.exists()) return true
+        // Check internal files dir (copied from assets)
+        val internalModel = File(context.filesDir, MODEL_FILE)
+        if (internalModel.exists()) return true
+        // Check assets (bundled — only feasible for CI/testing, not production)
+        return try {
+            context.assets.open("models/$MODEL_FILE").use { true }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     suspend fun ensureLoaded() = withContext(Dispatchers.IO) {
         if (llmInference != null) return@withContext
         initMutex.withLock {

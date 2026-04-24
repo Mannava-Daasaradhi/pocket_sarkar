@@ -61,6 +61,14 @@ fun HomeScreen(onNavigate: (Screen) -> Unit) {
             icon = Icons.Default.Gavel,
             color = MaterialTheme.colorScheme.tertiaryContainer
         ),
+        ModuleCard(
+            screen = Screen.TestAi,
+            titleHindi = "AI परीक्षण",
+            titleEnglish = "AI Test Console",
+            description = "Test on-device & Ollama AI directly",
+            icon = Icons.Default.SmartToy,
+            color = MaterialTheme.colorScheme.secondaryContainer
+        ),
     )
 
     Scaffold(

@@ -41,6 +41,15 @@ data/schemes/sqlite/*.db
 *.iml
 .DS_Store
 
+# Model files — never commit large binary models to git
+# Use: python scripts/download_model/download_model.py --model e4b-int4
+android/app/src/main/assets/models/
+android/app/src/main/assets/*.task
+android/app/src/main/assets/*.gguf
+
+# External model path (pushed via ADB for testing)
+# /sdcard/Android/data/com.pocketsarkar/files/models/
+
 
 temp/
 

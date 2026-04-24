@@ -10,6 +10,7 @@ import com.pocketsarkar.ui.screens.DecoderScreen
 import com.pocketsarkar.ui.screens.SchemesScreen
 import com.pocketsarkar.ui.screens.RadarScreen
 import com.pocketsarkar.ui.screens.RightsScreen
+import com.pocketsarkar.ui.screens.TestQueryScreen
 
 /**
  * All navigation destinations in one place.
@@ -21,6 +22,7 @@ sealed class Screen(val route: String) {
     data object Schemes : Screen("schemes")      // Scheme Explainer
     data object Radar   : Screen("radar")        // Opportunity Radar
     data object Rights  : Screen("rights")       // Rights Companion
+    data object TestAi  : Screen("test_ai")      // AI test console (Phase 3)
     // FormPilot will be added in Phase 7
 }
 
@@ -48,6 +50,9 @@ fun PocketSarkarNavHost(
         }
         composable(Screen.Rights.route) {
             RightsScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Screen.TestAi.route) {
+            TestQueryScreen(onBack = { navController.popBackStack() })
         }
     }
 }
