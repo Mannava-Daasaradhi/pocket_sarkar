@@ -153,4 +153,5 @@ dependencies {
     testImplementation(libs.coroutines.test)
     
     testImplementation(libs.androidx.test.core)
+    testImplementation("org.json:json:20240303")
 }
