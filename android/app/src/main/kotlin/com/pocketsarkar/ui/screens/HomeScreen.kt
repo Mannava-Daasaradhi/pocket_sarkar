@@ -31,15 +31,15 @@ fun HomeScreen(onNavigate: (Screen) -> Unit) {
     val modules = listOf(
         ModuleCard(
             screen = Screen.Decoder,
-            titleHindi = "à¤¦à¤¸à¥à¤¤à¤¾à¤µà¥‡à¤œà¤¼ à¤¡à¥€à¤•à¥‹à¤¡à¤°",
+            titleHindi = "दस्तावेज़ डीकोडर",
             titleEnglish = "Document Decoder",
-            description = "Scan any document â€” loan, rental, legal notice",
+            description = "Scan any document — loan, rental, legal notice",
             icon = Icons.Default.DocumentScanner,
             color = MaterialTheme.colorScheme.errorContainer
         ),
         ModuleCard(
             screen = Screen.Schemes,
-            titleHindi = "à¤¸à¤°à¤•à¤¾à¤°à¥€ à¤¯à¥‹à¤œà¤¨à¤¾à¤à¤‚",
+            titleHindi = "सरकारी योजनाएं",
             titleEnglish = "Scheme Explainer",
             description = "Find government schemes you qualify for",
             icon = Icons.Default.AccountBalance,
@@ -47,7 +47,7 @@ fun HomeScreen(onNavigate: (Screen) -> Unit) {
         ),
         ModuleCard(
             screen = Screen.Radar,
-            titleHindi = "à¤…à¤µà¤¸à¤° à¤°à¤¾à¤¡à¤¾à¤°",
+            titleHindi = "अवसर राडार",
             titleEnglish = "Opportunity Radar",
             description = "Schemes you didn't know you were eligible for",
             icon = Icons.Default.Radar,
@@ -55,7 +55,7 @@ fun HomeScreen(onNavigate: (Screen) -> Unit) {
         ),
         ModuleCard(
             screen = Screen.Rights,
-            titleHindi = "à¤…à¤§à¤¿à¤•à¤¾à¤° à¤¸à¤¾à¤¥à¥€",
+            titleHindi = "अधिकार साथी",
             titleEnglish = "Rights Companion",
             description = "Know your rights in any situation",
             icon = Icons.Default.Gavel,
@@ -82,7 +82,7 @@ fun HomeScreen(onNavigate: (Screen) -> Unit) {
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "à¤ªà¥‰à¤•à¥‡à¤Ÿ à¤¸à¤°à¤•à¤¾à¤°",
+                            text = "पॉकेट सरकार",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -162,4 +162,3 @@ private fun ModuleCardItem(
         }
     }
 }
-

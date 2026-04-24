@@ -1,23 +1,33 @@
 ﻿package com.pocketsarkar.ai.mediapipe
 
 import android.content.Context
-import android.util.Log
 import android.graphics.Bitmap
+import android.util.Log
 import com.google.mediapipe.tasks.core.OutputHandler
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import com.google.mediapipe.tasks.genai.llminference.LlmInferenceSession
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * GemmaEngine — wraps MediaPipe LlmInference for on-device Gemma 4 E4B INT4.
+ *
+ * CRITICAL DESIGN:
+ * - ONE LlmInference sync engine per process lifetime (GPU/NPU resource is exclusive).
+ * - Streaming uses a SEPARATE engine with a ResultListener baked in (MediaPipe
+ *   0.10.20 requires the listener at construction time, unlike later versions).
+ * - streamMutex ensures at most ONE stream engine exists at a time, preventing
+ *   the "LlmInference is already in use" GPU crash on the S24 Ultra.
+ */
 @Singleton
 class GemmaEngine @Inject constructor(
     @ApplicationContext private val context: Context
@@ -30,26 +40,23 @@ class GemmaEngine @Inject constructor(
         private const val TEMPERATURE = 0.7f
     }
 
-    // Base engine for sync inference (no result listener)
+    // Sync engine — no result listener, for generate()
     private var llmInference: LlmInference? = null
     private var modelPath: String? = null
+
     private val initMutex = Mutex()
+    // Only one streaming engine at a time — prevents GPU exclusive-access crash
+    private val streamMutex = Mutex()
 
     val isLoaded: Boolean get() = llmInference != null
 
-    /**
-     * Returns true if the model file exists on disk and can be loaded.
-     * Does NOT load the model — use ensureLoaded() for that.
-     * AiRouter calls this to decide routing without triggering a load.
-     */
+    // ── Model availability ────────────────────────────────────────────────────
+
     fun isModelAvailable(): Boolean {
-        // Check external files dir (preferred — large file, pushed via ADB)
-        val externalModel = File(context.getExternalFilesDir(null), "models/$MODEL_FILE")
-        if (externalModel.exists()) return true
-        // Check internal files dir (copied from assets)
-        val internalModel = File(context.filesDir, MODEL_FILE)
-        if (internalModel.exists()) return true
-        // Check assets (bundled — only feasible for CI/testing, not production)
+        val external = File(context.getExternalFilesDir(null), "models/$MODEL_FILE")
+        if (external.exists()) return true
+        val internal = File(context.filesDir, MODEL_FILE)
+        if (internal.exists()) return true
         return try {
             context.assets.open("models/$MODEL_FILE").use { true }
         } catch (e: Exception) {
@@ -57,32 +64,36 @@ class GemmaEngine @Inject constructor(
         }
     }
 
+    // ── Initialisation ────────────────────────────────────────────────────────
+
     suspend fun ensureLoaded() = withContext(Dispatchers.IO) {
         if (llmInference != null) return@withContext
         initMutex.withLock {
-        if (llmInference != null) return@withLock
+            if (llmInference != null) return@withLock
 
-        val path = getModelPath()
-            ?: error(
-                "Gemma 4 E4B model not found at assets/models/$MODEL_FILE. " +
-                "Run: python scripts/download_model/download_model.py --model e4b-int4"
-            )
-        modelPath = path
+            val path = getModelPath()
+                ?: error(
+                    "Gemma 4 E4B model not found. " +
+                    "Run: python scripts/download_model/download_model.py --model e4b-int4\n" +
+                    "Then: adb push gemma4-e4b-it-int4.task " +
+                    "/sdcard/Android/data/com.pocketsarkar/files/models/"
+                )
+            modelPath = path
 
-        val options = LlmInference.LlmInferenceOptions.builder()
-            .setModelPath(path)
-            .setMaxTokens(MAX_TOKENS)
-            .build()
+            val options = LlmInference.LlmInferenceOptions.builder()
+                .setModelPath(path)
+                .setMaxTokens(MAX_TOKENS)
+                .build()
 
-        llmInference = LlmInference.createFromOptions(context, options)
-        } // end initMutex.withLock
+            llmInference = LlmInference.createFromOptions(context, options)
+            Log.i(TAG, "LlmInference loaded from: $path")
+        }
     }
 
     private fun getModelPath(): String? {
-        val externalModel = File(context.getExternalFilesDir(null), "models/$MODEL_FILE")
-        if (externalModel.exists()) return externalModel.absolutePath
+        val external = File(context.getExternalFilesDir(null), "models/$MODEL_FILE")
+        if (external.exists()) return external.absolutePath
         return try {
-            // Copy asset to filesDir so MediaPipe gets a real filesystem path
             val outFile = File(context.filesDir, MODEL_FILE)
             if (!outFile.exists()) {
                 context.assets.open("models/$MODEL_FILE").use { input ->
@@ -91,23 +102,45 @@ class GemmaEngine @Inject constructor(
             }
             outFile.absolutePath
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to extract model asset models/$MODEL_FILE", e)
+            Log.e(TAG, "Failed to extract model asset: $MODEL_FILE", e)
             null
         }
     }
 
-    private fun createSession(engine: LlmInference): LlmInferenceSession {
-        val sessionOptions = LlmInferenceSession.LlmInferenceSessionOptions.builder()
-            .setTopK(TOP_K)
-            .setTemperature(TEMPERATURE)
-            .build()
-        return LlmInferenceSession.createFromOptions(engine, sessionOptions)
-    }
+    // ── Sync generation ───────────────────────────────────────────────────────
 
     /**
-     * Streaming inference. Creates a temporary engine with the result listener baked in,
-     * since LlmInferenceOptions.setResultListener is the only way to receive async tokens
-     * in MediaPipe 0.10.20.
+     * Full blocking response. Caller must have called ensureLoaded() first.
+     *
+     * CORRECT API for MediaPipe 0.10.20:
+     *   engine.generateResponse(inputText: String): String   ← THIS (on base LlmInference)
+     *
+     * WRONG (does not exist in 0.10.20):
+     *   session.generateResponse()    ← LlmInferenceSession has no such method
+     */
+    suspend fun generate(
+        systemPrompt: String,
+        userPrompt: String,
+        conversationHistory: List<ChatTurn> = emptyList()
+    ): String = withContext(Dispatchers.IO) {
+        val engine = llmInference
+            ?: error("GemmaEngine not initialised. Call ensureLoaded() first.")
+        engine.generateResponse(buildPrompt(systemPrompt, conversationHistory, userPrompt))
+    }
+
+    // ── Streaming generation ──────────────────────────────────────────────────
+
+    /**
+     * Streaming via a separate LlmInference with a ResultListener.
+     *
+     * Why a separate engine? In MediaPipe 0.10.20, ResultListener must be passed at
+     * LlmInferenceOptions construction time. The sync engine has no listener attached.
+     *
+     * streamMutex guarantees at most one stream engine is alive at a time, preventing
+     * the exclusive-GPU-access RuntimeException on real devices (S24 Ultra, Pixel 8).
+     *
+     * LlmInferenceSession is required to call generateResponseAsync() on a
+     * listener-enabled engine. Session options carry topK / temperature.
      */
     fun generateStream(
         systemPrompt: String,
@@ -117,76 +150,50 @@ class GemmaEngine @Inject constructor(
         val path = modelPath
             ?: error("GemmaEngine not initialised. Call ensureLoaded() first.")
 
-        val listener = OutputHandler.ProgressListener<String> { partialResult, done ->
-            if (partialResult != null) trySend(partialResult)
-            if (done) close()
-        }
+        streamMutex.withLock {
+            val listener = OutputHandler.ProgressListener<String> { partialResult, done ->
+                if (partialResult != null) trySend(partialResult)
+                if (done) close()
+            }
 
-        val options = LlmInference.LlmInferenceOptions.builder()
-            .setModelPath(path)
-            .setMaxTokens(MAX_TOKENS)
-            .setResultListener(listener)
-            .build()
+            val streamOptions = LlmInference.LlmInferenceOptions.builder()
+                .setModelPath(path)
+                .setMaxTokens(MAX_TOKENS)
+                .setResultListener(listener)
+                .build()
 
-        val streamEngine = LlmInference.createFromOptions(context, options)
-        val session = createSession(streamEngine)
+            val streamEngine = LlmInference.createFromOptions(context, streamOptions)
 
-        session.addQueryChunk(buildPrompt(systemPrompt, conversationHistory, userPrompt))
-        session.generateResponseAsync()
+            val sessionOptions = LlmInferenceSession.LlmInferenceSessionOptions.builder()
+                .setTopK(TOP_K)
+                .setTemperature(TEMPERATURE)
+                .build()
+            val session = LlmInferenceSession.createFromOptions(streamEngine, sessionOptions)
 
-        awaitClose {
-            session.close()
-            streamEngine.close()
+            session.addQueryChunk(buildPrompt(systemPrompt, conversationHistory, userPrompt))
+            session.generateResponseAsync()
+
+            awaitClose {
+                session.close()
+                streamEngine.close()
+            }
         }
     }
 
-    suspend fun generate(
-        systemPrompt: String,
-        userPrompt: String,
-        conversationHistory: List<ChatTurn> = emptyList()
-    ): String = withContext(Dispatchers.IO) {
-        val engine = llmInference
-            ?: error("GemmaEngine not initialised. Call ensureLoaded() first.")
-        // LlmInferenceSession.generateResponse() does NOT exist in MediaPipe 0.10.20.
-        // The sync API lives on the base LlmInference engine directly.
-        engine.generateResponse(buildPrompt(systemPrompt, conversationHistory, userPrompt))
-    }
+    // ── Vision stub (text-only fallback until Phase 4) ────────────────────────
 
-    // NOTE: image param is currently unused — MediaPipe 0.10.20 vision API
-    // requires MPImage + session.addImage() which needs GraphOptions.setEnableVisionModality(true).
-    // Wire this properly in Phase 4 when DocumentDecoder is fully implemented.
-    // For now falls back to text-only inference so the build compiles.
     @Suppress("UNUSED_PARAMETER")
     suspend fun generateWithImage(
         systemPrompt: String,
         userPrompt: String,
         image: Bitmap
-    ): Flow<String> = callbackFlow {
-        val path = modelPath
-            ?: error("GemmaEngine not initialised. Call ensureLoaded() first.")
-
-        val listener = OutputHandler.ProgressListener<String> { partialResult, done ->
-            if (partialResult != null) trySend(partialResult)
-            if (done) close()
-        }
-
-        val options = LlmInference.LlmInferenceOptions.builder()
-            .setModelPath(path)
-            .setMaxTokens(MAX_TOKENS)
-            .setResultListener(listener)
-            .build()
-
-        val streamEngine = LlmInference.createFromOptions(context, options)
-        val session = createSession(streamEngine)
-
-        session.addQueryChunk(buildPrompt(systemPrompt, emptyList(), userPrompt))
-        session.generateResponseAsync()
-
-        awaitClose {
-            session.close()
-            streamEngine.close()
-        }
+    ): Flow<String> {
+        // TODO Phase 4: wire MPImage + GraphOptions.setEnableVisionModality(true)
+        // Falls back to text-only so DocumentDecoder compiles and runs without crash.
+        return generateStream(systemPrompt, userPrompt)
     }
+
+    // ── Prompt builder ────────────────────────────────────────────────────────
 
     private fun buildPrompt(
         systemPrompt: String,
@@ -208,15 +215,14 @@ class GemmaEngine @Inject constructor(
         append("<start_of_turn>model\n")
     }
 
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
     fun release() {
         llmInference?.close()
         llmInference = null
+        modelPath = null
     }
 }
 
 data class ChatTurn(val role: ChatRole, val content: String)
 enum class ChatRole { USER, ASSISTANT }
-
-
-
-
