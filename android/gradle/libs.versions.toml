@@ -4,11 +4,11 @@ roomTesting = "2.7.0"
 coroutinesTest = "1.8.1"
 androidxTestCore = "1.5.0"
 # Build
-agp                     = "8.4.2"
-kotlin                  = "2.0.0"
+agp                     = "8.5.2"
+kotlin                  = "2.2.0"
 litertlm = "0.9.0-alpha01"
 # Compose
-composeBom              = "2024.06.00"
+composeBom              = "2024.09.00"
 activityCompose         = "1.9.0"
 navigationCompose       = "2.7.7"
 lifecycleCompose        = "2.8.2"
@@ -26,7 +26,7 @@ room                    = "2.7.0"
 androidxSqliteBundled   = "2.5.0"
 
 # DI
-hilt                    = "2.51.1"
+hilt                    = "2.52"
 hiltNavigationCompose   = "1.2.0"
 
 # AI — MediaPipe LLM Inference (check https://developers.google.com/mediapipe/solutions/genai/llm_inference for latest)
@@ -126,4 +126,4 @@ kotlin-android          = { id = "org.jetbrains.kotlin.android", version.ref = "
 kotlin-compose          = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-kapt             = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 hilt                    = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
-ksp                     = { id = "com.google.devtools.ksp", version = "2.0.0-1.0.21" }
+ksp                     = { id = "com.google.devtools.ksp", version = "2.2.0-1.0.29" }
