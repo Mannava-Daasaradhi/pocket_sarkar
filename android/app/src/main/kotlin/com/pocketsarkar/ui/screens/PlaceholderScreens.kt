@@ -9,38 +9,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Placeholder screens for modules not yet implemented.
-// DecoderScreen has graduated to its own file (Phase 4).
-// Each module gets its own file in ui/screens/ once its Phase begins.
-// ─────────────────────────────────────────────────────────────────────────────
-
-// SchemesScreen graduated to SchemeExplainerScreen.kt (Phase 5)
+import com.pocketsarkar.ui.theme.Localization
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RadarScreen(onBack: () -> Unit) {
+fun RightsScreen(
+    userPrefs: com.pocketsarkar.data.UserPreferences,
+    onBack: () -> Unit
+) {
+    val strings = Localization.getStrings(userPrefs.userLanguage)
     PlaceholderScreen(
-        title    = "Opportunity Radar",
-        subtitle = "अवसर राडार",
+        title    = strings.navRights,
+        subtitle = strings.subWelcome,
         phase    = "Phase 7",
         onBack   = onBack,
     )
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun RightsScreen(onBack: () -> Unit) {
-    PlaceholderScreen(
-        title    = "Rights Companion",
-        subtitle = "अधिकार साथी",
-        phase    = "Phase 7",
-        onBack   = onBack,
-    )
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -1,4 +1,4 @@
-﻿package com.pocketsarkar.modules.schemes
+package com.pocketsarkar.modules.schemes
 
 import android.content.Context
 import android.util.Log

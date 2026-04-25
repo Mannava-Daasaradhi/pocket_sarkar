@@ -108,9 +108,11 @@ private val BotBubbleColor    = Color(0xFFF0F4FF)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SchemeExplainerScreen(
+    userPrefs: com.pocketsarkar.data.UserPreferences,
     onBack: () -> Unit,
     viewModel: SchemeExplainerViewModel = hiltViewModel(),
 ) {
+    val strings = com.pocketsarkar.ui.theme.Localization.getStrings(userPrefs.userLanguage)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     val keyboard  = LocalSoftwareKeyboardController.current
@@ -151,9 +153,7 @@ fun SchemeExplainerScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("सरकारी योजनाएं", fontWeight = FontWeight.Bold)
-                        Text("सरकारी योजनाएं", style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                        Text(strings.navSchemes, fontWeight = FontWeight.Bold)
                     }
                 },
                 navigationIcon = {
@@ -164,7 +164,7 @@ fun SchemeExplainerScreen(
                 actions = {
                     if (uiState.messages.isNotEmpty()) {
                         TextButton(onClick = { viewModel.clearHistory() }) {
-                            Text("Clear", color = MaterialTheme.colorScheme.primary)
+                            Text(strings.cancel, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 },
@@ -235,7 +235,7 @@ fun SchemeExplainerScreen(
                 item { Spacer(Modifier.height(8.dp)) }
 
                 if (uiState.messages.isEmpty()) {
-                    item { EmptyStateHint() }
+                    item { EmptyStateHint(strings) }
                 }
 
                 items(uiState.messages, key = { it.id }) { message ->
@@ -253,6 +253,7 @@ fun SchemeExplainerScreen(
 
             // Input row
             ChatInputRow(
+                strings        = strings,
                 text           = uiState.inputText,
                 isLoading      = uiState.isLoading || uiState.isStreaming,
                 onTextChanged  = { viewModel.onInputChanged(it) },
@@ -462,6 +463,7 @@ private fun TypingIndicator() {
 
 @Composable
 private fun ChatInputRow(
+    strings: com.pocketsarkar.ui.theme.AppStrings,
     text: String,
     isLoading: Boolean,
     onTextChanged: (String) -> Unit,
@@ -483,7 +485,7 @@ private fun ChatInputRow(
                 value         = text,
                 onValueChange = onTextChanged,
                 modifier      = Modifier.weight(1f),
-                placeholder   = { Text("Koi bhi scheme poochein...") },
+                placeholder   = { Text(strings.placeholderNote.take(20) + "...") },
                 maxLines      = 4,
                 // Keep field enabled while loading so the user can see/edit their next question
                 enabled       = true,
@@ -538,7 +540,7 @@ private fun ChatInputRow(
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun EmptyStateHint() {
+private fun EmptyStateHint(strings: com.pocketsarkar.ui.theme.AppStrings) {
     Column(
         modifier = Modifier
             .fillMaxWidth()

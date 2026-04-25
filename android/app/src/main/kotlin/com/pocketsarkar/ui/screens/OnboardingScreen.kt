@@ -35,15 +35,18 @@ private val LANGUAGES = listOf(
     LangOption("English",   "English",    "Welcome!",           "Your Name",            "Enter your name",              "Get Started",       "Select Language"),
     LangOption("Hindi",     "हिन्दी",      "नमस्ते!",             "आपका नाम",             "अपना नाम लिखें",               "शुरू करें",          "भाषा चुनें"),
     LangOption("Telugu",    "తెలుగు",     "నమస్కారం!",           "మీ పేరు",              "మీ పేరు రాయండి",               "ప్రారంభించండి",     "భాష ఎంచుకోండి"),
-    LangOption("Bengali",   "বাংলা",      "স্বাগতম!",            "আপনার নাম",            "আপনার নাম লিখুন",              "শুরু করুন",          "ভাষা বেছে নিন"),
-    LangOption("Marathi",   "मराठी",      "स्वागत आहे!",         "तुमचे नाव",            "तुमचे नाव लिहा",               "सुरू करा",           "भाषा निवडा"),
+    LangOption("Bengali",   "বাংলা",      "স্বাগতম!",            "আপনার नाम",            "আপনার নাম লিখুন",              "শুরু করুন",          "ভাষা বেছে নিন"),
+    LangOption("Marathi",   "मराठी",      "स्वागत आहे!",         "तुमचे नाव",            "तुमचे नाव लिहा",               "सुरू करा",           "भाषा निवడా"),
     LangOption("Tamil",     "தமிழ்",      "வணக்கம்!",            "உங்கள் பெயர்",         "உங்கள் பெயரை உள்ளிடவும்",     "தொடங்கு",           "மொழி தேர்வு"),
-    LangOption("Gujarati",  "ગુજરાતી",    "સ્વાગત છે!",          "તમારું નામ",           "તમારું નામ લખો",               "શરૂ કરો",            "ભાષા પસંદ કરો"),
-    LangOption("Kannada",   "ಕನ್ನಡ",      "ಸ್ವಾಗತ!",             "ನಿಮ್ಮ ಹೆಸರು",          "ನಿಮ್ಮ ಹೆಸರನ್ನು ನಮೂದಿಸಿ",      "ಪ್ರಾರಂಭಿಸಿ",        "ಭಾಷೆ ಆಯ್ಕೆ"),
+    LangOption("Gujarati",  "ગુજરાતી",    "સ્વાગત છે!",          "తమరు నామ",             "તમારું નામ લખો",               "શરૂ કરો",            "ભાષા પસંદ કરો"),
+    LangOption("Kannada",   "ಕನ್ನಡ",      "ಸ್ವಾಗత!",             "ನಿಮ್ಮ ಹೆಸರು",          "ನಿమ్మ ಹೆಸರನ್ನು ನಮೂದಿಸಿ",      "ಪ್ರಾರಂಭಿಸಿ",        "భాషె ಆಯ್ಕೆ"),
     LangOption("Odia",      "ଓଡ଼ିଆ",       "ସ୍ୱାଗତ!",             "ଆପଣଙ୍କ ନାମ",           "ଆପଣଙ୍କ ନାମ ଲିଖନ୍ତୁ",          "ଆରମ୍ଭ କରନ୍ତୁ",      "ଭାଷା ବାଛନ୍ତୁ"),
-    LangOption("Malayalam", "മലയാളം",     "സ്വാഗതം!",            "നിങ്ങളുടെ പേര്",       "നിങ്ങളുടെ പേര് ടൈപ്പ് ചെയ്യുക","തുടങ്ങുക",          "ഭാഷ തിരഞ്ഞെടുക്കൂ"),
+    LangOption("Malayalam", "മലയാളം",     "സ്വാగതം!",            "നിങ്ങളുടെ പേര്",       "നിങ്ങളുടെ പേര് ടైప్ ചെയ്യുക","തുടങ്ങുക",          "ഭാഷ തിരഞ്ഞെടുക്കൂ"),
     LangOption("Punjabi",   "ਪੰਜਾਬੀ",      "ਜੀ ਆਇਆਂ ਨੂੰ!",       "ਤੁਹਾਡਾ ਨਾਮ",           "ਆਪਣਾ ਨਾਮ ਲਿਖੋ",               "ਸ਼ੁਰੂ ਕਰੋ",          "ਭਾਸ਼ਾ ਚੁਣੋ"),
     LangOption("Assamese",  "অসমীয়া",    "স্বাগতম!",            "আপোনাৰ নাম",           "আপোনাৰ নাম লিখক",             "আৰম্ভ কৰক",         "ভাষা বাছক"),
+    LangOption("Maithili",  "मैथिली",     "स्वागत अछि!",         "अहाँक नाम",            "अहाँक नाम लिखू",               "शुरू करू",           "भाषा चुनू"),
+    LangOption("Santali",   "ᱥᱟᱱᱛᱟᱲᱤ",    "ᱥᱟᱹᱜᱩᱱ ᱫᱟᱨᱟమ్!",      "ᱟᱢᱟᱜ ᱧᱩᱛᱩᱢ",          "ᱟᱢᱟᱜ ᱧᱩᱛᱩᱢ ᱚᱞ ᱢᱮ",             "ᱮᱛᱚᱦᱚᱵ ᱢᱮ",          "ᱯᱟᱹᱨᱥᱤ ᱵᱟᱪᱷᱟᱣ ᱢᱮ"),
+    LangOption("Kashmiri",  "کأشُر",      "خوش آمدید!",           "تُہند ناو",            "تُہند ناو لؠکھِو",              "شۆروٗ کٔرِو",         "زبان ژارو")
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -55,7 +58,7 @@ fun OnboardingScreen(
     var selectedLang by remember {
         mutableStateOf(LANGUAGES.find { it.code == userPrefs.userLanguage } ?: LANGUAGES[0])
     }
-    var name by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(userPrefs.userName ?: "") }
 
     Surface(modifier = Modifier.fillMaxSize(), color = PSCream) {
         Column(
@@ -91,7 +94,7 @@ fun OnboardingScreen(
 
             Spacer(Modifier.height(36.dp))
 
-            // Step 1 — Language (shown first so welcome text updates immediately)
+            // Step 1 — Language
             Text(
                 text = selectedLang.selectLangLabel,
                 style = MaterialTheme.typography.labelLarge,
@@ -115,7 +118,7 @@ fun OnboardingScreen(
 
             Spacer(Modifier.height(36.dp))
 
-            // Step 2 — Name (label and placeholder now reflect chosen language)
+            // Step 2 — Name
             Text(
                 text = selectedLang.nameLabel,
                 style = MaterialTheme.typography.labelLarge,
