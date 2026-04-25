@@ -13,6 +13,8 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    
+    @javax.inject.Inject lateinit var userPrefs: com.pocketsarkar.data.UserPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,7 +23,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             PocketSarkarTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    PocketSarkarNavHost()
+                    PocketSarkarNavHost(userPrefs = userPrefs)
                 }
             }
         }

@@ -26,7 +26,11 @@ import com.pocketsarkar.ui.navigation.Screen
 import com.pocketsarkar.ui.theme.*
 
 @Composable
-fun HomeScreen(onNavigate: (Screen) -> Unit) {
+fun HomeScreen(
+    userPrefs: com.pocketsarkar.data.UserPreferences,
+    onNavigate: (Screen) -> Unit
+) {
+    val strings = Localization.getStrings(userPrefs.userLanguage)
     var selectedOpportunity by remember { mutableStateOf<Opportunity?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -37,11 +41,11 @@ fun HomeScreen(onNavigate: (Screen) -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 32.dp)
         ) {
-            HeaderSection()
-            SarkarScoreDashboard()
-            OpportunitySection(onCardClick = { selectedOpportunity = it })
-            AajKiJaankari()
-            AiConsoleCard(onNavigate)
+            HeaderSection(strings, userPrefs.userName ?: "Bhai")
+            SarkarScoreDashboard(strings)
+            OpportunitySection(strings, onCardClick = { selectedOpportunity = it })
+            AajKiJaankari(strings)
+            AiConsoleCard(strings, onNavigate)
         }
 
         if (selectedOpportunity != null) {
@@ -54,16 +58,16 @@ fun HomeScreen(onNavigate: (Screen) -> Unit) {
 }
 
 @Composable
-private fun HeaderSection() {
+private fun HeaderSection(strings: AppStrings, userName: String) {
     Column(modifier = Modifier.padding(24.dp)) {
         Text(
-            text = "Namaste, Ram Prasad bhai!",
+            text = "${strings.welcome}, $userName!",
             style = MaterialTheme.typography.headlineSmall.copy(fontSize = 20.sp),
             color = PSNavy,
             fontWeight = FontWeight.Medium
         )
         Text(
-            text = "नमस्ते, राम प्रसाद भाई!",
+            text = strings.subWelcome,
             style = MaterialTheme.typography.bodySmall,
             color = PSTextSecondary
         )
@@ -71,7 +75,7 @@ private fun HeaderSection() {
 }
 
 @Composable
-private fun SarkarScoreDashboard() {
+private fun SarkarScoreDashboard(strings: AppStrings) {
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
         colors = CardDefaults.cardColors(containerColor = PSWhite),
@@ -100,12 +104,12 @@ private fun SarkarScoreDashboard() {
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("6/10", style = MaterialTheme.typography.displaySmall, color = PSNavy, fontWeight = FontWeight.Bold)
-                    Text("Sarkar Score", style = MaterialTheme.typography.labelSmall, color = PSTextSecondary)
+                    Text(strings.scoreTitle, style = MaterialTheme.typography.labelSmall, color = PSTextSecondary)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Text("₹18,500 ab bhi baaki hai", style = MaterialTheme.typography.titleMedium, color = PSSaffron, fontWeight = FontWeight.Bold)
-            Text("Aapke liye 3 nayi yojnayein mili hain", style = MaterialTheme.typography.bodySmall, color = PSTextSecondary)
+            Text(strings.pendingAmount, style = MaterialTheme.typography.titleMedium, color = PSSaffron, fontWeight = FontWeight.Bold)
+            Text(strings.schemesFound, style = MaterialTheme.typography.bodySmall, color = PSTextSecondary)
         }
     }
 }
@@ -113,7 +117,7 @@ private fun SarkarScoreDashboard() {
 data class Opportunity(val title: String, val amount: String, val eligibility: String, val details: String, val docs: String)
 
 @Composable
-private fun OpportunitySection(onCardClick: (Opportunity) -> Unit) {
+private fun OpportunitySection(strings: AppStrings, onCardClick: (Opportunity) -> Unit) {
     val opportunities = listOf(
         Opportunity(
             "PM Kisan Nidhi", "₹6,000/yr",
@@ -136,7 +140,7 @@ private fun OpportunitySection(onCardClick: (Opportunity) -> Unit) {
     )
 
     Column(modifier = Modifier.padding(vertical = 24.dp)) {
-        Text("Nayi Yojnayein (Opportunities)", style = MaterialTheme.typography.labelMedium, color = PSNavy, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+        Text(strings.newOpportunities, style = MaterialTheme.typography.labelMedium, color = PSNavy, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
         LazyRow(contentPadding = PaddingValues(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             items(opportunities) { opp ->
                 OpportunityCard(opp, onClick = { onCardClick(opp) })
@@ -208,33 +212,66 @@ private fun DetailItem(label: String, content: String, contentColor: Color) {
 }
 
 @Composable
-private fun AajKiJaankari() {
+private fun AajKiJaankari(strings: AppStrings) {
     Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp), colors = CardDefaults.cardColors(containerColor = PSNavy), shape = RoundedCornerShape(12.dp)) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Info, contentDescription = null, tint = PSSaffron, modifier = Modifier.size(24.dp))
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text("Aaj ki jaankari", style = MaterialTheme.typography.labelSmall, color = PSSaffron)
-                Text("Ration card update karne ki aakhri taarikh 30 June hai.", style = MaterialTheme.typography.bodyMedium, color = PSWhite)
+                Text(strings.todayInfo, style = MaterialTheme.typography.labelSmall, color = PSSaffron)
+                Text(strings.placeholderNote, style = MaterialTheme.typography.bodyMedium, color = PSWhite)
             }
         }
     }
 }
 
 @Composable
-private fun AiConsoleCard(onNavigate: (Screen) -> Unit) {
+private fun AiConsoleCard(strings: AppStrings, onNavigate: (Screen) -> Unit) {
     Card(
         onClick = { onNavigate(Screen.TestAi) },
         modifier = Modifier.fillMaxWidth().padding(24.dp),
-        colors = CardDefaults.cardColors(containerColor = PSSaffron.copy(alpha = 0.1f)),
-        border = BorderStroke(1.dp, PSSaffron)
+        colors = CardDefaults.cardColors(containerColor = PSWhite),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, PSSaffron.copy(alpha = 0.3f))
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.SmartToy, contentDescription = null, tint = PSSaffron, modifier = Modifier.size(32.dp))
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Redesigned AI Spark Icon
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(PSSaffron.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Canvas(modifier = Modifier.size(24.dp)) {
+                    val center = center
+                    val radius = size.minDimension / 2
+                    
+                    // Draw a sparkling neural hub
+                    drawCircle(color = PSSaffron, radius = radius * 0.4f)
+                    for (i in 0..7) {
+                        val angle = i * 45f
+                        val startX = center.x + (radius * 0.5f) * kotlin.math.cos(Math.toRadians(angle.toDouble())).toFloat()
+                        val startY = center.y + (radius * 0.5f) * kotlin.math.sin(Math.toRadians(angle.toDouble())).toFloat()
+                        val endX = center.x + radius * kotlin.math.cos(Math.toRadians(angle.toDouble())).toFloat()
+                        val endY = center.y + radius * kotlin.math.sin(Math.toRadians(angle.toDouble())).toFloat()
+                        drawLine(
+                            color = PSSaffron,
+                            start = androidx.compose.ui.geometry.Offset(startX, startY),
+                            end = androidx.compose.ui.geometry.Offset(endX, endY),
+                            strokeWidth = 2.dp.toPx(),
+                            cap = StrokeCap.Round
+                        )
+                    }
+                }
+            }
+            
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text("AI Test Console", style = MaterialTheme.typography.titleMedium, color = PSNavy, fontWeight = FontWeight.Bold)
-                Text("Test your PC server connection", style = MaterialTheme.typography.bodySmall, color = PSTextSecondary)
+                Text(strings.aiConsoleTitle, style = MaterialTheme.typography.titleMedium, color = PSNavy, fontWeight = FontWeight.Bold)
+                Text(strings.aiConsoleSub, style = MaterialTheme.typography.bodySmall, color = PSTextSecondary)
             }
             Spacer(modifier = Modifier.weight(1f))
             Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = PSSaffron)

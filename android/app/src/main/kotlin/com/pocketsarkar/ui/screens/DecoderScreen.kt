@@ -99,9 +99,11 @@ import java.util.concurrent.Executors
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DecoderScreen(
+    userPrefs: com.pocketsarkar.data.UserPreferences,
     onBack: () -> Unit,
     viewModel: DecoderViewModel = hiltViewModel(),
 ) {
+    val strings = com.pocketsarkar.ui.theme.Localization.getStrings(userPrefs.userLanguage)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -133,12 +135,7 @@ fun DecoderScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Document Decoder")
-                        Text(
-                            "दस्तावेज़ डीकोडर",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        Text(strings.documentDecoder)
                     }
                 },
                 navigationIcon = {
@@ -175,6 +172,7 @@ fun DecoderScreen(
             when (state) {
                 is DecoderUiState.Idle -> {
                     IdleContent(
+                        strings = strings,
                         cameraPermissionGranted = cameraPermissionGranted,
                         onRequestPermission    = { permissionLauncher.launch(Manifest.permission.CAMERA) },
                         onCapture              = { bitmap -> viewModel.analyze(DocumentInput.CameraImage(bitmap)) },
@@ -210,6 +208,7 @@ fun DecoderScreen(
 
 @Composable
 private fun IdleContent(
+    strings: com.pocketsarkar.ui.theme.AppStrings,
     cameraPermissionGranted: Boolean,
     onRequestPermission: () -> Unit,
     onCapture: (Bitmap) -> Unit,
@@ -317,13 +316,13 @@ private fun IdleContent(
                     )
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        "Camera access needed to scan documents",
+                        strings.cameraAccess,
                         color = Color.White,
                         textAlign = TextAlign.Center,
                     )
                     Spacer(Modifier.height(16.dp))
                     Button(onClick = onRequestPermission) {
-                        Text("Allow Camera")
+                        Text(strings.allowCamera)
                     }
                 }
             }
@@ -348,7 +347,7 @@ private fun IdleContent(
                     ) {
                         Icon(Icons.Default.FileOpen, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Upload PDF / Image")
+                        Text(strings.uploadDoc)
                     }
                     FilledTonalButton(
                         onClick  = { pasteMode = true },
@@ -356,7 +355,7 @@ private fun IdleContent(
                     ) {
                         Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Paste Text")
+                        Text(strings.pasteText)
                     }
                 }
             } else {

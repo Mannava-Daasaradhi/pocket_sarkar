@@ -17,6 +17,7 @@ import com.pocketsarkar.ui.screens.*
 import com.pocketsarkar.ui.theme.*
 
 sealed class Screen(val route: String, val label: String = "", val icon: ImageVector? = null) {
+    data object Onboarding : Screen("onboarding")
     data object ModelSetup : Screen("model_setup")
     data object Home    : Screen("home", "Home", Icons.Default.Home)
     data object Decoder : Screen("decoder", "Decoder", Icons.Default.CameraAlt)
@@ -38,10 +39,20 @@ val navItems = listOf(
 
 @Composable
 fun PocketSarkarNavHost(
+    userPrefs: com.pocketsarkar.data.UserPreferences,
     navController: NavHostController = rememberNavController()
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    val strings = com.pocketsarkar.ui.theme.Localization.getStrings(userPrefs.userLanguage)
+    
+    // DEBUG: Always show onboarding for testing
+    val DEBUG_FORCE_ONBOARDING = true
+    val startDest = if (DEBUG_FORCE_ONBOARDING || !userPrefs.isOnboardingComplete) {
+        Screen.Onboarding.route 
+    } else {
+        Screen.ModelSetup.route
+    }
     
     val showBottomBar = currentDestination?.route in navItems.map { it.route }
 
@@ -54,9 +65,17 @@ fun PocketSarkarNavHost(
                     tonalElevation = 0.dp
                 ) {
                     navItems.forEach { screen ->
+                        val label = when(screen.route) {
+                            Screen.Home.route -> strings.navHome
+                            Screen.Decoder.route -> strings.navDecoder
+                            Screen.Schemes.route -> strings.navSchemes
+                            Screen.Rights.route -> strings.navRights
+                            Screen.Profile.route -> strings.navProfile
+                            else -> screen.label
+                        }
                         NavigationBarItem(
-                            icon = { Icon(screen.icon!!, contentDescription = screen.label) },
-                            label = { Text(screen.label) },
+                            icon = { Icon(screen.icon!!, contentDescription = label) },
+                            label = { Text(label) },
                             selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                             onClick = {
                                 navController.navigate(screen.route) {
@@ -82,9 +101,19 @@ fun PocketSarkarNavHost(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.ModelSetup.route,
+            startDestination = startDest,
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable(Screen.Onboarding.route) {
+                OnboardingScreen(
+                    userPrefs = userPrefs,
+                    onComplete = {
+                        navController.navigate(Screen.ModelSetup.route) {
+                            popUpTo(Screen.Onboarding.route) { inclusive = true }
+                        }
+                    }
+                )
+            }
             composable(Screen.ModelSetup.route) {
                 ModelSetupScreen(
                     onModelReady = {
@@ -95,10 +124,16 @@ fun PocketSarkarNavHost(
                 )
             }
             composable(Screen.Home.route) {
-                HomeScreen(onNavigate = { screen -> navController.navigate(screen.route) })
+                HomeScreen(
+                    userPrefs = userPrefs,
+                    onNavigate = { screen -> navController.navigate(screen.route) }
+                )
             }
             composable(Screen.Decoder.route) {
-                DecoderScreen(onBack = { navController.popBackStack() })
+                DecoderScreen(
+                    userPrefs = userPrefs,
+                    onBack = { navController.popBackStack() }
+                )
             }
             composable(Screen.Schemes.route) {
                 SchemesScreen(onBack = { navController.popBackStack() })
