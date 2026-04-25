@@ -46,9 +46,7 @@ fun PocketSarkarNavHost(
     val currentDestination = navBackStackEntry?.destination
     val strings = com.pocketsarkar.ui.theme.Localization.getStrings(userPrefs.userLanguage)
     
-    // DEBUG: Always show onboarding for testing
-    val DEBUG_FORCE_ONBOARDING = true
-    val startDest = if (DEBUG_FORCE_ONBOARDING || !userPrefs.isOnboardingComplete) {
+    val startDest = if (!userPrefs.isOnboardingComplete) {
         Screen.Onboarding.route 
     } else {
         Screen.ModelSetup.route

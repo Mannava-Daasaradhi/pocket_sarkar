@@ -81,7 +81,7 @@ class SchemeExplainerViewModel @Inject constructor(
                 messages     = state.messages + userMsg + assistantPlaceholder,
                 inputText    = "",
                 isLoading    = true,
-                isStreaming   = false,
+                isStreaming   = true,
                 showFakeWarning = false,
                 fakeDetectionResult = null,
                 currentQueryInfo = null,

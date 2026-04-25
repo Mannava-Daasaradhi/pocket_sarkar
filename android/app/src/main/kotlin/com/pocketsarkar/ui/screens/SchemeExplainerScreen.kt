@@ -151,7 +151,7 @@ fun SchemeExplainerScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Scheme Explainer", fontWeight = FontWeight.Bold)
+                        Text("सरकारी योजनाएं", fontWeight = FontWeight.Bold)
                         Text("सरकारी योजनाएं", style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                     }
@@ -485,9 +485,10 @@ private fun ChatInputRow(
                 modifier      = Modifier.weight(1f),
                 placeholder   = { Text("Koi bhi scheme poochein...") },
                 maxLines      = 4,
-                enabled       = !isLoading,
+                // Keep field enabled while loading so the user can see/edit their next question
+                enabled       = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                keyboardActions = KeyboardActions(onSend = { if (text.isNotBlank()) onSend() }),
+                keyboardActions = KeyboardActions(onSend = { if (text.isNotBlank() && !isLoading) onSend() }),
                 trailingIcon  = {
                     if (text.isNotBlank()) {
                         IconButton(onClick = { onTextChanged("") }, modifier = Modifier.size(20.dp)) {
@@ -499,7 +500,7 @@ private fun ChatInputRow(
             )
             Spacer(Modifier.width(6.dp))
 
-            // Voice button
+            // Voice button — disabled while a response is streaming
             FilledTonalIconButton(
                 onClick  = onVoiceInput,
                 enabled  = !isLoading,

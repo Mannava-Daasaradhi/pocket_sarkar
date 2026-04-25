@@ -2,7 +2,6 @@ package com.pocketsarkar.ui.screens
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,115 +21,134 @@ import com.pocketsarkar.R
 import com.pocketsarkar.data.UserPreferences
 import com.pocketsarkar.ui.theme.*
 
+private data class LangOption(
+    val code: String,
+    val label: String,
+    val welcomeText: String,
+    val nameLabel: String,
+    val namePlaceholder: String,
+    val buttonText: String,
+    val selectLangLabel: String,
+)
+
+private val LANGUAGES = listOf(
+    LangOption("English",   "English",    "Welcome!",           "Your Name",            "Enter your name",              "Get Started",       "Select Language"),
+    LangOption("Hindi",     "हिन्दी",      "नमस्ते!",             "आपका नाम",             "अपना नाम लिखें",               "शुरू करें",          "भाषा चुनें"),
+    LangOption("Telugu",    "తెలుగు",     "నమస్కారం!",           "మీ పేరు",              "మీ పేరు రాయండి",               "ప్రారంభించండి",     "భాష ఎంచుకోండి"),
+    LangOption("Bengali",   "বাংলা",      "স্বাগতম!",            "আপনার নাম",            "আপনার নাম লিখুন",              "শুরু করুন",          "ভাষা বেছে নিন"),
+    LangOption("Marathi",   "मराठी",      "स्वागत आहे!",         "तुमचे नाव",            "तुमचे नाव लिहा",               "सुरू करा",           "भाषा निवडा"),
+    LangOption("Tamil",     "தமிழ்",      "வணக்கம்!",            "உங்கள் பெயர்",         "உங்கள் பெயரை உள்ளிடவும்",     "தொடங்கு",           "மொழி தேர்வு"),
+    LangOption("Gujarati",  "ગુજરાતી",    "સ્વાગત છે!",          "તમારું નામ",           "તમારું નામ લખો",               "શરૂ કરો",            "ભાષા પસંદ કરો"),
+    LangOption("Kannada",   "ಕನ್ನಡ",      "ಸ್ವಾಗತ!",             "ನಿಮ್ಮ ಹೆಸರು",          "ನಿಮ್ಮ ಹೆಸರನ್ನು ನಮೂದಿಸಿ",      "ಪ್ರಾರಂಭಿಸಿ",        "ಭಾಷೆ ಆಯ್ಕೆ"),
+    LangOption("Odia",      "ଓଡ଼ିଆ",       "ସ୍ୱାଗତ!",             "ଆପଣଙ୍କ ନାମ",           "ଆପଣଙ୍କ ନାମ ଲିଖନ୍ତୁ",          "ଆରମ୍ଭ କରନ୍ତୁ",      "ଭାଷା ବାଛନ୍ତୁ"),
+    LangOption("Malayalam", "മലയാളം",     "സ്വാഗതം!",            "നിങ്ങളുടെ പേര്",       "നിങ്ങളുടെ പേര് ടൈപ്പ് ചെയ്യുക","തുടങ്ങുക",          "ഭാഷ തിരഞ്ഞെടുക്കൂ"),
+    LangOption("Punjabi",   "ਪੰਜਾਬੀ",      "ਜੀ ਆਇਆਂ ਨੂੰ!",       "ਤੁਹਾਡਾ ਨਾਮ",           "ਆਪਣਾ ਨਾਮ ਲਿਖੋ",               "ਸ਼ੁਰੂ ਕਰੋ",          "ਭਾਸ਼ਾ ਚੁਣੋ"),
+    LangOption("Assamese",  "অসমীয়া",    "স্বাগতম!",            "আপোনাৰ নাম",           "আপোনাৰ নাম লিখক",             "আৰম্ভ কৰক",         "ভাষা বাছক"),
+)
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun OnboardingScreen(
     userPrefs: UserPreferences,
     onComplete: () -> Unit
 ) {
+    var selectedLang by remember {
+        mutableStateOf(LANGUAGES.find { it.code == userPrefs.userLanguage } ?: LANGUAGES[0])
+    }
     var name by remember { mutableStateOf("") }
-    var selectedLang by remember { mutableStateOf(userPrefs.userLanguage) }
-
-    val languages = listOf(
-        "English", "Hindi (हिन्दी)", "Telugu (తెలుగు)", "Bengali (বাংলা)",
-        "Marathi (मराठी)", "Tamil (தமிழ்)", "Gujarati (ગુજરાતી)", "Kannada (ಕನ್ನಡ)",
-        "Odia (ଓଡ଼ିଆ)", "Malayalam (മലയാളം)", "Punjabi (ਪੰਜਾਬੀ)", "Assamese (ଅସମୀୟା)",
-        "Maithili (मैथिली)", "Santali (संताली)", "Kashmiri (کٲشُر)"
-    )
 
     Surface(modifier = Modifier.fillMaxSize(), color = PSCream) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+                .padding(horizontal = 24.dp)
+                .padding(top = 48.dp, bottom = 40.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(40.dp))
-
-            // Logo
             Icon(
                 painter = painterResource(id = R.drawable.ic_pocket_sarkar_icon),
-                contentDescription = "Pocket Sarkar Logo",
-                modifier = Modifier.size(100.dp),
+                contentDescription = "Pocket Sarkar",
+                modifier = Modifier.size(88.dp),
                 tint = Color.Unspecified
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(20.dp))
 
             Text(
-                text = "Swagat Hai!",
+                text = selectedLang.welcomeText,
                 style = MaterialTheme.typography.headlineMedium,
                 color = PSNavy,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
             )
             Text(
-                text = "Welcome to Pocket Sarkar",
+                text = "Pocket Sarkar",
                 style = MaterialTheme.typography.bodyLarge,
-                color = PSTextSecondary
+                color = PSTextSecondary,
+                textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(Modifier.height(36.dp))
 
-            // Name Input
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "Aapka Naam? (Your Name)",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = PSNavy,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Enter your name") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = PSTextPrimary,
-                    unfocusedTextColor = PSTextPrimary,
-                    focusedBorderColor = PSNavy,
-                    unfocusedBorderColor = PSBorder,
-                    focusedLabelColor = PSNavy,
-                    unfocusedLabelColor = PSTextSecondary,
-                    focusedPlaceholderColor = PSTextSecondary,
-                    unfocusedPlaceholderColor = PSTextSecondary,
-                    cursorColor = PSNavy,
-                ),
-                    shape = RoundedCornerShape(12.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Language Selection
+            // Step 1 — Language (shown first so welcome text updates immediately)
             Text(
-                "Select Language",
+                text = selectedLang.selectLangLabel,
                 style = MaterialTheme.typography.labelLarge,
                 color = PSNavy,
-                modifier = Modifier.align(Alignment.Start).padding(bottom = 12.dp)
+                modifier = Modifier.align(Alignment.Start)
             )
-
+            Spacer(Modifier.height(12.dp))
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                languages.forEach { lang ->
+                LANGUAGES.forEach { lang ->
                     LanguageChip(
-                        name = lang,
-                        isSelected = selectedLang == lang,
+                        label = lang.label,
+                        isSelected = selectedLang.code == lang.code,
                         onClick = { selectedLang = lang }
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(Modifier.height(36.dp))
+
+            // Step 2 — Name (label and placeholder now reflect chosen language)
+            Text(
+                text = selectedLang.nameLabel,
+                style = MaterialTheme.typography.labelLarge,
+                color = PSNavy,
+                modifier = Modifier.align(Alignment.Start)
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text(selectedLang.namePlaceholder) },
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor    = PSTextPrimary,
+                    unfocusedTextColor  = PSTextPrimary,
+                    focusedBorderColor  = PSNavy,
+                    unfocusedBorderColor = PSBorder,
+                    focusedPlaceholderColor   = PSTextSecondary,
+                    unfocusedPlaceholderColor = PSTextSecondary,
+                    cursorColor = PSNavy,
+                ),
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            Spacer(Modifier.height(40.dp))
 
             Button(
                 onClick = {
-                    if (name.isNotBlank()) {
-                        userPrefs.userName = name
-                        userPrefs.userLanguage = selectedLang
+                    val trimmed = name.trim()
+                    if (trimmed.isNotBlank()) {
+                        userPrefs.userName     = trimmed
+                        userPrefs.userLanguage = selectedLang.code
                         userPrefs.isOnboardingComplete = true
                         onComplete()
                     }
@@ -139,47 +157,39 @@ fun OnboardingScreen(
                 enabled = name.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = PSNavy,
-                    contentColor = PSWhite,
-                    disabledContainerColor = PSNavy.copy(alpha = 0.3f)
+                    contentColor   = PSWhite,
+                    disabledContainerColor = PSNavy.copy(alpha = 0.3f),
+                    disabledContentColor   = PSWhite.copy(alpha = 0.5f),
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Shuru Karein (Get Started)", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text(selectedLang.buttonText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
 }
 
 @Composable
-private fun LanguageChip(
-    name: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
+private fun LanguageChip(label: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
         modifier = Modifier.clickable { onClick() },
-        color = if (isSelected) PSNavy else PSWhite,
-        shape = RoundedCornerShape(20.dp),
+        color  = if (isSelected) PSNavy else PSWhite,
+        shape  = RoundedCornerShape(20.dp),
         border = BorderStroke(1.dp, if (isSelected) PSNavy else PSBorder)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = name,
+                text = label,
                 color = if (isSelected) PSWhite else PSNavy,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
             )
             if (isSelected) {
-                Spacer(modifier = Modifier.width(4.dp))
-                Icon(
-                    Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    tint = PSSaffron,
-                    modifier = Modifier.size(16.dp)
-                )
+                Spacer(Modifier.width(4.dp))
+                Icon(Icons.Default.CheckCircle, null, tint = PSSaffron, modifier = Modifier.size(15.dp))
             }
         }
     }

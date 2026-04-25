@@ -84,7 +84,23 @@ class SchemeExplainer @Inject constructor(
         userLanguage: String = "hi",
     ): Flow<SchemeStreamEvent> = flow {
 
-        gemma.ensureLoaded()
+        // Pre-flight: check model availability before doing anything
+        val modelReady = runCatching { gemma.ensureLoaded() }.isSuccess
+        if (!modelReady) {
+            emit(SchemeStreamEvent.FakeDetectionComplete(
+                FakeDetectionResult(false, 0.0, emptyList(), emptyList())
+            ))
+            emit(SchemeStreamEvent.FunctionCallExecuted("", 0))
+            val msg = when {
+                userLanguage.contains("hi", ignoreCase = true) ->
+                    "Model abhi download nahi hua hai. Kripya pehle Model Setup screen se Gemma download karein, ya phir internet se connect ho jaayein."
+                else ->
+                    "The AI model is not downloaded yet. Please go to Model Setup to download Gemma, or connect to the internet."
+            }
+            emit(SchemeStreamEvent.Token(msg))
+            emit(SchemeStreamEvent.Complete(msg))
+            return@flow
+        }
 
         // Pass 0: Fake detection (runs first, always)
         val fakeResult = runCatching {
