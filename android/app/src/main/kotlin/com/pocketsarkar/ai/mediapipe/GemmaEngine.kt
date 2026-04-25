@@ -27,6 +27,10 @@ class GemmaEngine @Inject constructor(
     private var engine: Engine? = null
     private val initMutex = Mutex()
 
+    // Prevents "Current mutation had a higher priority" — LiteRT-LM cannot
+    // handle concurrent sendMessage calls on the same engine instance.
+    private val inferenceMutex = Mutex()
+
     // Set to true if engine fails to load — triggers Ollama fallback in AiRouter
     private var engineLoadFailed = false
 
@@ -36,11 +40,12 @@ class GemmaEngine @Inject constructor(
     private val defaultSampler = SamplerConfig(topK = 40, topP = 0.95, temperature = 0.8)
 
     private val baseSystemPrompt =
-                "You are Pocket Sarkar, a helpful AI assistant for Indian citizens. " +
-                "Always respond in the same language the user writes or speaks in. " +
-                "Supported languages include Hindi, English, Telugu, Tamil, Bengali, " +
-                "Marathi, Kannada, Gujarati, Malayalam, Punjabi, Odia, and other Indian languages. " +
-                "If the user code-switches between languages, match their natural style."
+        "You are Pocket Sarkar, a helpful AI assistant for Indian citizens. " +
+        "Always respond in the same language the user writes or speaks in. " +
+        "Supported languages include Hindi, English, Telugu, Tamil, Bengali, " +
+        "Marathi, Kannada, Gujarati, Malayalam, Punjabi, Odia, and other Indian languages. " +
+        "If the user code-switches between languages, match their natural style."
+
     suspend fun ensureLoaded(): Engine = initMutex.withLock {
         if (engineLoadFailed) throw IllegalStateException("Engine failed to initialize — falling back to Ollama")
         if (engine == null) {
@@ -62,11 +67,6 @@ class GemmaEngine @Inject constructor(
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /**
-     * Injects the system prompt + history into the user message.
-     * Works around the removal of systemMessage from ConversationConfig
-     * in LiteRT-LM latest.release.
-     */
     private fun buildPrompt(
         systemPrompt: String,
         userPrompt: String,
@@ -94,23 +94,27 @@ class GemmaEngine @Inject constructor(
 
     suspend fun generate(prompt: String): String {
         val eng = ensureLoaded()
-        return withContext(Dispatchers.Default) {
-            eng.createConversation(defaultConfig()).use { conv ->
-                conv.sendMessage(
-                    Message.of(buildPrompt(baseSystemPrompt, prompt))
-                ).toString()
+        return inferenceMutex.withLock {
+            withContext(Dispatchers.Default) {
+                eng.createConversation(defaultConfig()).use { conv ->
+                    conv.sendMessage(
+                        Message.of(buildPrompt(baseSystemPrompt, prompt))
+                    ).toString()
+                }
             }
         }
     }
 
     fun generateStreaming(prompt: String): Flow<String> = flow {
         val eng = ensureLoaded()
-        eng.createConversation(defaultConfig()).use { conv ->
-            conv.sendMessageAsync(
-                Message.of(buildPrompt(baseSystemPrompt, prompt))
-            ).collect { msg ->
-                val token = msg.toString()
-                if (token.isNotEmpty()) emit(token)
+        inferenceMutex.withLock {
+            eng.createConversation(defaultConfig()).use { conv ->
+                conv.sendMessageAsync(
+                    Message.of(buildPrompt(baseSystemPrompt, prompt))
+                ).collect { msg ->
+                    val token = msg.toString()
+                    if (token.isNotEmpty()) emit(token)
+                }
             }
         }
     }
@@ -123,11 +127,13 @@ class GemmaEngine @Inject constructor(
         conversationHistory: List<ChatTurn> = emptyList()
     ): String {
         val eng = ensureLoaded()
-        return withContext(Dispatchers.Default) {
-            eng.createConversation(defaultConfig()).use { conv ->
-                conv.sendMessage(
-                    Message.of(buildPrompt(systemPrompt, userPrompt, conversationHistory))
-                ).toString()
+        return inferenceMutex.withLock {
+            withContext(Dispatchers.Default) {
+                eng.createConversation(defaultConfig()).use { conv ->
+                    conv.sendMessage(
+                        Message.of(buildPrompt(systemPrompt, userPrompt, conversationHistory))
+                    ).toString()
+                }
             }
         }
     }
@@ -138,12 +144,14 @@ class GemmaEngine @Inject constructor(
         conversationHistory: List<ChatTurn> = emptyList()
     ): Flow<String> = flow {
         val eng = ensureLoaded()
-        eng.createConversation(defaultConfig()).use { conv ->
-            conv.sendMessageAsync(
-                Message.of(buildPrompt(systemPrompt, userPrompt, conversationHistory))
-            ).collect { msg ->
-                val token = msg.toString()
-                if (token.isNotEmpty()) emit(token)
+        inferenceMutex.withLock {
+            eng.createConversation(defaultConfig()).use { conv ->
+                conv.sendMessageAsync(
+                    Message.of(buildPrompt(systemPrompt, userPrompt, conversationHistory))
+                ).collect { msg ->
+                    val token = msg.toString()
+                    if (token.isNotEmpty()) emit(token)
+                }
             }
         }
     }
@@ -158,25 +166,22 @@ class GemmaEngine @Inject constructor(
             image.compress(Bitmap.CompressFormat.JPEG, 90, baos)
             baos.toByteArray()
         }
-        eng.createConversation(defaultConfig()).use { conv ->
-            val multipart = Message.of(
-                listOf(
-                    Content.ImageBytes(imageBytes),
-                    Content.Text(buildPrompt(systemPrompt, userPrompt)),
+        inferenceMutex.withLock {
+            eng.createConversation(defaultConfig()).use { conv ->
+                val multipart = Message.of(
+                    listOf(
+                        Content.ImageBytes(imageBytes),
+                        Content.Text(buildPrompt(systemPrompt, userPrompt)),
+                    )
                 )
-            )
-            conv.sendMessageAsync(multipart).collect { msg ->
-                val token = msg.toString()
-                if (token.isNotEmpty()) emit(token)
+                conv.sendMessageAsync(multipart).collect { msg ->
+                    val token = msg.toString()
+                    if (token.isNotEmpty()) emit(token)
+                }
             }
         }
     }
 
-    /**
-     * Returns true only if the model file exists AND the engine hasn't
-     * previously failed to load. A corrupt/incomplete file will set
-     * engineLoadFailed=true on first attempt, triggering Ollama fallback.
-     */
     fun isModelAvailable(): Boolean = File(modelPath).exists() && !engineLoadFailed
 
     fun release() {
