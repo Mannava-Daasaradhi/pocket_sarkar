@@ -2,26 +2,21 @@ package com.pocketsarkar.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// ── Primary: Deep Saffron ─────────────────────────────────────────────────────
-val Saffron80       = Color(0xFFFFD180)
-val Saffron40       = Color(0xFFE65100)
-val SaffronDark     = Color(0xFFBF360C)
+// ── Pocket Sarkar Master Color System ──────────────────────────────────────────
 
-// ── Secondary: India Green ────────────────────────────────────────────────────
-val IndiaGreen80    = Color(0xFFA5D6A7)
-val IndiaGreen40    = Color(0xFF2E7D32)
-val IndiaGreenDark  = Color(0xFF1B5E20)
+val PSNavy = Color(0xFF1A3A6B)
+val PSSaffron = Color(0xFFFF9933)
+val PSWhite = Color(0xFAFAF7FF)
+val PSCream = Color(0xFFF5F0E8)
+val PSGreen = Color(0xFF2E7D4F)
+val PSRedFlag = Color(0xFFC0392B)
+val PSAmberWarn = Color(0xFFE67E22)
+val PSTextPrimary = Color(0xFF1C1C1E)
+val PSTextSecondary = Color(0xFF5A5A6E)
+val PSBorder = Color(0x1F1A3A6B) // 12% opacity PSNavy
 
-// ── Tertiary: Peacock Blue ────────────────────────────────────────────────────
-val PeacockBlue80   = Color(0xFF80DEEA)
-val PeacockBlue40   = Color(0xFF00838F)
+// ── Dark Mode Palette ─────────────────────────────────────────────────────────
 
-// ── Neutrals ──────────────────────────────────────────────────────────────────
-val NeutralLight    = Color(0xFFFFF8F0)   // Warm white (not stark blue-white)
-val NeutralDark     = Color(0xFF1C1B1F)
-val SurfaceVariant  = Color(0xFFF5ECD7)   // Warm paper tone
-
-// ── Risk Colors (Document Decoder) ────────────────────────────────────────────
-val RiskSafe        = Color(0xFF2E7D32)   // Green
-val RiskCaution     = Color(0xFFF57F17)   // Amber
-val RiskHigh        = Color(0xFFC62828)   // Red
+val PSNavyDark = Color(0xFF0D1F3C)
+val PSCreamDark = Color(0xFF1A1A22)
+val PSWhiteDark = Color(0xFF242430)

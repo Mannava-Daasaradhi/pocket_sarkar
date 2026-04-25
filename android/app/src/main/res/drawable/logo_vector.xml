@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- ═══════════════════════════════════════════
+         POCKET SHADOW
+         ═══════════════════════════════════════════ -->
+    <path
+        android:pathData="M25,67 L83,67 Q87,67 87,71 L87,91 Q87,95 83,95 L25,95 Q21,95 21,91 L21,71 Q21,67 25,67 Z"
+        android:fillColor="#0D2347"
+        android:fillAlpha="0.55" />
+
+    <!-- ═══════════════════════════════════════════
+         POCKET BODY
+         ═══════════════════════════════════════════ -->
+    <path
+        android:pathData="M23,63 L85,63 Q89,63 89,67 L89,90 Q89,94 85,94 L23,94 Q19,94 19,90 L19,67 Q19,63 23,63 Z"
+        android:fillColor="#1F4A8A" />
+
+    <!-- Pocket lip -->
+    <path
+        android:pathData="M19,63 L89,63 L89,72 Q89,76 85,76 L23,76 Q19,76 19,72 Z"
+        android:fillColor="#2456A0" />
+
+    <!-- Lip inner highlight stripe -->
+    <path
+        android:pathData="M22,65 L86,65 L86,71 Q86,73 84,73 L24,73 Q22,73 22,71 Z"
+        android:fillColor="#3268BC"
+        android:fillAlpha="0.45" />
+
+    <!-- ═══════════════════════════════════════════
+         POCKET STITCHES — left vertical
+         ═══════════════════════════════════════════ -->
+    <path android:pathData="M27,63 L27,65" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M27,68 L27,70" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M27,73 L27,75" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M27,78 L27,80" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M27,83 L27,85" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M27,88 L27,90" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+
+    <!-- POCKET STITCHES — right vertical -->
+    <path android:pathData="M81,63 L81,65" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M81,68 L81,70" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M81,73 L81,75" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M81,78 L81,80" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M81,83 L81,85" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M81,88 L81,90" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+
+    <!-- POCKET STITCHES — bottom horizontal -->
+    <path android:pathData="M19,92 L22,92" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M25,92 L28,92" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M31,92 L34,92" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M37,92 L40,92" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M43,92 L46,92" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M49,92 L52,92" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M55,92 L58,92" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M61,92 L64,92" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M67,92 L70,92" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M73,92 L76,92" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M79,92 L82,92" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+    <path android:pathData="M85,92 L89,92" android:strokeColor="#C8A84B" android:strokeWidth="1.2" android:strokeLineCap="round" />
+
+    <!-- Rivet dots -->
+    <path android:pathData="M27,73 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0 -5,0" android:fillColor="#C8A84B" />
+    <path android:pathData="M81,73 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0 -5,0" android:fillColor="#C8A84B" />
+
+    <!-- ═══════════════════════════════════════════
+         SCROLL CURL ENDS
+         ═══════════════════════════════════════════ -->
+    <path
+        android:pathData="M40,24 L40,40 Q40,43 37,43 L33,43 Q30,43 30,40 L30,24 Q30,21 33,21 L37,21 Q40,21 40,24 Z"
+        android:fillColor="#EDE0C4"
+        android:strokeColor="#C8A84B"
+        android:strokeWidth="0.6" />
+    <path
+        android:pathData="M78,24 L78,40 Q78,43 75,43 L71,43 Q68,43 68,40 L68,24 Q68,21 71,21 L75,21 Q78,21 78,24 Z"
+        android:fillColor="#EDE0C4"
+        android:strokeColor="#C8A84B"
+        android:strokeWidth="0.6" />
+    <path
+        android:pathData="M40,62 L40,68 Q40,71 37,71 L33,71 Q30,71 30,68 L30,62 Q30,59 33,59 L37,59 Q40,59 40,62 Z"
+        android:fillColor="#EDE0C4"
+        android:strokeColor="#C8A84B"
+        android:strokeWidth="0.6" />
+    <path
+        android:pathData="M78,62 L78,68 Q78,71 75,71 L71,71 Q68,71 68,68 L68,62 Q68,59 71,59 L75,59 Q78,59 78,62 Z"
+        android:fillColor="#EDE0C4"
+        android:strokeColor="#C8A84B"
+        android:strokeWidth="0.6" />
+
+    <!-- ═══════════════════════════════════════════
+         SCROLL BODY
+         ═══════════════════════════════════════════ -->
+    <path
+        android:pathData="M33,22 L75,22 Q78,22 78,25 L78,68 Q78,71 75,71 L33,71 Q30,71 30,68 L30,25 Q30,22 33,22 Z"
+        android:fillColor="#FAFAF7"
+        android:strokeColor="#D4C5A0"
+        android:strokeWidth="0.7" />
+    <path
+        android:pathData="M34,25 L74,25 Q76,25 76,27 L76,66 Q76,68 74,68 L34,68 Q32,68 32,66 L32,27 Q32,25 34,25 Z"
+        android:fillColor="#FDFCF8" />
+
+    <!-- ═══════════════════════════════════════════
+         ASHOKA CHAKRA
+         Center: (54, 44)  Radius: 14
+         ═══════════════════════════════════════════ -->
+    <!-- Outer ring -->
+    <path
+        android:pathData="M54,28 m-17,16 a17,17 0 1,0 34,0 a17,17 0 1,0 -34,0"
+        android:fillColor="#00000000"
+        android:strokeColor="#C8A84B"
+        android:strokeWidth="0.9" />
+    <!-- Main ring -->
+    <path
+        android:pathData="M54,28 m-14,16 a14,14 0 1,0 28,0 a14,14 0 1,0 -28,0"
+        android:fillColor="#00000000"
+        android:strokeColor="#C8A84B"
+        android:strokeWidth="1.5" />
+    <!-- Hub -->
+    <path
+        android:pathData="M54,28 m-3.5,16 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0"
+        android:fillColor="#C8A84B" />
+    <!-- Hub hole -->
+    <path
+        android:pathData="M54,28 m-1.5,16 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0 -3,0"
+        android:fillColor="#FAFAF7" />
+
+    <!-- 8 Spokes -->
+    <path android:pathData="M54,30 L54,58" android:strokeColor="#C8A84B" android:strokeWidth="1.1" android:strokeLineCap="round" />
+    <path android:pathData="M64,34 L44,54" android:strokeColor="#C8A84B" android:strokeWidth="1.1" android:strokeLineCap="round" />
+    <path android:pathData="M68,44 L40,44" android:strokeColor="#C8A84B" android:strokeWidth="1.1" android:strokeLineCap="round" />
+    <path android:pathData="M64,54 L44,34" android:strokeColor="#C8A84B" android:strokeWidth="1.1" android:strokeLineCap="round" />
+    <path android:pathData="M59,31 L49,57" android:strokeColor="#C8A84B" android:strokeWidth="0.9" android:strokeLineCap="round" />
+    <path android:pathData="M66,39 L42,49" android:strokeColor="#C8A84B" android:strokeWidth="0.9" android:strokeLineCap="round" />
+    <path android:pathData="M66,49 L42,39" android:strokeColor="#C8A84B" android:strokeWidth="0.9" android:strokeLineCap="round" />
+    <path android:pathData="M59,57 L49,31" android:strokeColor="#C8A84B" android:strokeWidth="0.9" android:strokeLineCap="round" />
+
+    <!-- Spoke tip dots -->
+    <path android:pathData="M54,30 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0 -3,0" android:fillColor="#C8A84B" />
+    <path android:pathData="M54,58 m-1.5,0 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0 -3,0" android:fillColor="#C8A84B" />
+    <path android:pathData="M68,44 m0,-1.5 a1.5,1.5 0 1,0 0,3 a1.5,1.5 0 1,0 0,-3" android:fillColor="#C8A84B" />
+    <path android:pathData="M40,44 m0,-1.5 a1.5,1.5 0 1,0 0,3 a1.5,1.5 0 1,0 0,-3" android:fillColor="#C8A84B" />
+    <path android:pathData="M64,34 m-1.2,-1.2 a1.5,1.5 0 1,0 2.4,2.4 a1.5,1.5 0 1,0 -2.4,-2.4" android:fillColor="#C8A84B" />
+    <path android:pathData="M44,54 m-1.2,-1.2 a1.5,1.5 0 1,0 2.4,2.4 a1.5,1.5 0 1,0 -2.4,-2.4" android:fillColor="#C8A84B" />
+    <path android:pathData="M64,54 m-1.2,-1.2 a1.5,1.5 0 1,0 2.4,2.4 a1.5,1.5 0 1,0 -2.4,-2.4" android:fillColor="#C8A84B" />
+    <path android:pathData="M44,34 m-1.2,-1.2 a1.5,1.5 0 1,0 2.4,2.4 a1.5,1.5 0 1,0 -2.4,-2.4" android:fillColor="#C8A84B" />
+
+    <!-- Scroll text lines (decorative) -->
+    <path android:pathData="M36,60 L72,60" android:strokeColor="#1A3A6B" android:strokeWidth="1.4" android:strokeLineCap="round" android:strokeAlpha="0.28" />
+
+    <!-- ═══════════════════════════════════════════
+         STAR HALO RINGS
+         Center: (54, 16)
+         ═══════════════════════════════════════════ -->
+    <path
+        android:pathData="M54,0 m-22,16 a22,22 0 1,0 44,0 a22,22 0 1,0 -44,0"
+        android:fillColor="#FF9933"
+        android:fillAlpha="0.10" />
+    <path
+        android:pathData="M54,0 m-16,16 a16,16 0 1,0 32,0 a16,16 0 1,0 -32,0"
+        android:fillColor="#FF9933"
+        android:fillAlpha="0.18" />
+
+    <!-- ═══════════════════════════════════════════
+         STAR — 5-point
+         Center: (54, 16)
+         ═══════════════════════════════════════════ -->
+    <path
+        android:pathData="M54,3 L58.5,14 L71,14 L61,21 L64.5,32 L54,25 L43.5,32 L47,21 L37,14 L49.5,14 Z"
+        android:fillColor="#FF9933" />
+    <path
+        android:pathData="M54,7 L57,15 L65.5,15 L59,20 L61.5,28 L54,23 L46.5,28 L49,20 L42.5,15 L51,15 Z"
+        android:fillColor="#FFBE5C" />
+    <!-- Star center -->
+    <path
+        android:pathData="M54,10 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0 -5,0"
+        android:fillColor="#FF9933"
+        android:fillAlpha="0.55" />
+    <path
+        android:pathData="M54,10 m-1.2,0 a1.2,1.2 0 1,0 2.4,0 a1.2,1.2 0 1,0 -2.4,0"
+        android:fillColor="#FAFAF7" />
+
+</vector>
