@@ -97,6 +97,7 @@ class ModelDownloadManager @Inject constructor(
             emit(DownloadState.Complete)
 
         } catch (e: Exception) {
+            tempFile.delete()
             emit(DownloadState.Error(e.message ?: "Download failed. Check your connection."))
         }
     }.flowOn(Dispatchers.IO)

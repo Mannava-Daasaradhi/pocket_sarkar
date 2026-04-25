@@ -118,8 +118,6 @@ dependencies {
 
     // ── WorkManager — background model download ──────────────────────────────
     implementation(libs.work.runtime.ktx)
-    implementation(libs.hilt.work)
-    ksp(libs.hilt.work.compiler)
 
     // ── MediaPipe LLM Inference — Gemma 4 E4B on-device ──────────────────────
     //implementation(libs.mediapipe.tasks.genai)
