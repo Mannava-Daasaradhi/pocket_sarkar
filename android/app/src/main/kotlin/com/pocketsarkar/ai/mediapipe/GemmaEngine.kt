@@ -36,9 +36,11 @@ class GemmaEngine @Inject constructor(
     private val defaultSampler = SamplerConfig(topK = 40, topP = 0.95, temperature = 0.8)
 
     private val baseSystemPrompt =
-        "You are Pocket Sarkar, a helpful AI assistant for Indian citizens. " +
-        "Answer in simple Hindi or English based on the user's language."
-
+                "You are Pocket Sarkar, a helpful AI assistant for Indian citizens. " +
+                "Always respond in the same language the user writes or speaks in. " +
+                "Supported languages include Hindi, English, Telugu, Tamil, Bengali, " +
+                "Marathi, Kannada, Gujarati, Malayalam, Punjabi, Odia, and other Indian languages. " +
+                "If the user code-switches between languages, match their natural style."
     suspend fun ensureLoaded(): Engine = initMutex.withLock {
         if (engineLoadFailed) throw IllegalStateException("Engine failed to initialize — falling back to Ollama")
         if (engine == null) {
