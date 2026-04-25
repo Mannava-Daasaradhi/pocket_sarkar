@@ -18,36 +18,23 @@ class ModelDownloadViewModel @Inject constructor(
     private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
     val downloadState: StateFlow<DownloadState> = _downloadState.asStateFlow()
 
-    private var observeJob: Job? = null
-
-    init {
-        // Resume observing if a download was already in progress
-        val existingId = downloadManager.savedDownloadId
-        if (existingId != -1L && !downloadManager.isModelDownloaded()) {
-            observeDownload(existingId)
-        }
-    }
+    private var downloadJob: Job? = null
 
     fun isModelReady(): Boolean = downloadManager.isModelDownloaded()
 
     fun startDownload() {
-        val id = downloadManager.startDownload()
-        observeDownload(id)
-    }
-
-    fun retryDownload() {
-        observeJob?.cancel()
-        downloadManager.cancelDownload()
-        _downloadState.value = DownloadState.Idle
-        startDownload()
-    }
-
-    private fun observeDownload(downloadId: Long) {
-        observeJob?.cancel()
-        observeJob = viewModelScope.launch {
-            downloadManager.observeDownload(downloadId).collect { state ->
+        if (downloadJob?.isActive == true) return
+        downloadJob = viewModelScope.launch {
+            downloadManager.downloadModel().collect { state ->
                 _downloadState.value = state
             }
         }
+    }
+
+    fun retryDownload() {
+        downloadJob?.cancel()
+        downloadJob = null
+        _downloadState.value = DownloadState.Idle
+        startDownload()
     }
 }

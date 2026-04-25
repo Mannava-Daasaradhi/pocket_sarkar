@@ -27,10 +27,12 @@ class GemmaEngine @Inject constructor(
     private var engine: Engine? = null
     private val initMutex = Mutex()
 
+    // Set to true if engine fails to load — triggers Ollama fallback in AiRouter
+    private var engineLoadFailed = false
+
     val modelPath: String =
         context.getExternalFilesDir(null)?.absolutePath + "/models/gemma-4-E4B-it.litertlm"
 
-    // SamplerConfig params — check actual types at compile time
     private val defaultSampler = SamplerConfig(topK = 40, topP = 0.95, temperature = 0.8)
 
     private val baseSystemPrompt =
@@ -38,14 +40,20 @@ class GemmaEngine @Inject constructor(
         "Answer in simple Hindi or English based on the user's language."
 
     suspend fun ensureLoaded(): Engine = initMutex.withLock {
+        if (engineLoadFailed) throw IllegalStateException("Engine failed to initialize — falling back to Ollama")
         if (engine == null) {
-            val config = EngineConfig(
-                modelPath = modelPath,
-                cacheDir  = context.cacheDir.path,
-            )
-            val e = Engine(config)
-            withContext(Dispatchers.IO) { e.initialize() }
-            engine = e
+            try {
+                val config = EngineConfig(
+                    modelPath = modelPath,
+                    cacheDir  = context.cacheDir.path,
+                )
+                val e = Engine(config)
+                withContext(Dispatchers.IO) { e.initialize() }
+                engine = e
+            } catch (e: Exception) {
+                engineLoadFailed = true
+                throw e
+            }
         }
         engine!!
     }
@@ -162,10 +170,16 @@ class GemmaEngine @Inject constructor(
         }
     }
 
-    fun isModelAvailable(): Boolean = File(modelPath).exists()
+    /**
+     * Returns true only if the model file exists AND the engine hasn't
+     * previously failed to load. A corrupt/incomplete file will set
+     * engineLoadFailed=true on first attempt, triggering Ollama fallback.
+     */
+    fun isModelAvailable(): Boolean = File(modelPath).exists() && !engineLoadFailed
 
     fun release() {
         engine?.close()
         engine = null
+        engineLoadFailed = false
     }
 }
