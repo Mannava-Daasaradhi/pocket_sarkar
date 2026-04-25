@@ -154,7 +154,7 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.room.testing)
     testImplementation(libs.coroutines.test)
-    
+    testImplementation(libs.mockk)
     testImplementation(libs.androidx.test.core)
     testImplementation("org.json:json:20240303")
 }
