@@ -136,7 +136,7 @@ fun PocketSarkarNavHost(
                 )
             }
             composable(Screen.Schemes.route) {
-                SchemesScreen(onBack = { navController.popBackStack() })
+                SchemeExplainerScreen(onBack = { navController.popBackStack() })
             }
             composable(Screen.Rights.route) {
                 RightsScreen(onBack = { navController.popBackStack() })

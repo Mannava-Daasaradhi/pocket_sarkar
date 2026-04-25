@@ -1,231 +1,348 @@
 ﻿package com.pocketsarkar.modules.schemes
 
+import android.content.Context
+import android.util.Log
 import com.pocketsarkar.ai.mediapipe.ChatRole
 import com.pocketsarkar.ai.mediapipe.ChatTurn
 import com.pocketsarkar.ai.mediapipe.GemmaEngine
 import com.pocketsarkar.db.dao.SchemeDao
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.json.JSONObject
 import javax.inject.Inject
+import javax.inject.Singleton
 
-/**
- * Scheme Explainer with function-calling architecture.
- *
- * The hallucination-prevention design:
- * 1. User asks a question
- * 2. Gemma 4 is given a TOOL CALL prompt â€” it outputs JSON like:
- *    {"tool": "query_scheme_db", "args": {"query": "kisan pension", "state": "UP"}}
- * 3. We intercept this, run the actual SQLite query
- * 4. Feed the real DB results back to Gemma 4
- * 5. Gemma 4 explains ONLY what the DB returned â€” cannot invent schemes
- *
- * Hallucination rate: 12% (pure generation) â†’ 2.3% (function calling)
- */
+private const val TAG = "SchemeExplainer"
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Data classes — ConversationState (Step 4)
+// ─────────────────────────────────────────────────────────────────────────────
+
+data class Message(
+    val role: String,         // "user" or "assistant"
+    val content: String,
+    val schemeId: String? = null,
+)
+
+data class ConversationState(
+    val messages: List<Message> = emptyList(),
+    val currentSchemeContext: com.pocketsarkar.db.entities.Scheme? = null,
+    val userProfileContext: UserProfile? = null,
+)
+
+data class FakeDetectionResult(
+    val isFake: Boolean,
+    val confidence: Double,
+    val reasons: List<String>,
+    val flagsDetected: List<String>,
+)
+
+data class SchemeQueryResult(
+    val schemes: List<com.pocketsarkar.db.entities.Scheme>,
+    val queryUsed: String,
+    val isFakeCheck: Boolean = false,
+)
+
+sealed class SchemeStreamEvent {
+    data class FakeDetectionComplete(val result: FakeDetectionResult) : SchemeStreamEvent()
+    data class FunctionCallExecuted(val query: String, val resultCount: Int) : SchemeStreamEvent()
+    data class Token(val text: String) : SchemeStreamEvent()
+    data class Complete(val fullText: String) : SchemeStreamEvent()
+    data class Error(val message: String) : SchemeStreamEvent()
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SchemeExplainer
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Singleton
 class SchemeExplainer @Inject constructor(
     private val gemma: GemmaEngine,
     private val schemeDao: SchemeDao,
     private val eligibilityEngine: EligibilityEngine,
+    @ApplicationContext private val context: Context,
 ) {
     private val conversationHistory = mutableListOf<ChatTurn>()
     private val historyMutex = Mutex()
 
-    /**
-     * Main entry: process a user query through the full function-calling pipeline.
-     * Returns a Flow<String> of the final streaming response.
-     */
+    private var _conversationState = ConversationState()
+    private val stateMutex = Mutex()
+
+    val conversationState: ConversationState get() = _conversationState
+
+    private val systemPrompt: String by lazy { loadAsset("ai/prompts/schemes/system_prompt.txt") }
+    private val fakeDetectionPrompt: String by lazy { loadAsset("ai/prompts/schemes/fake_detection.txt") }
+
+    // ── Public API ────────────────────────────────────────────────────────────
+
     fun query(
         userMessage: String,
         userProfile: UserProfile? = null,
-        userLanguage: String = "hi"
-    ): Flow<String> = flow {
+        userLanguage: String = "hi",
+    ): Flow<SchemeStreamEvent> = flow {
 
         gemma.ensureLoaded()
 
-        // Step 1: Ask Gemma 4 to emit a tool call (non-streaming, we need the full JSON)
+        // Pass 0: Fake detection (runs first, always)
+        val fakeResult = runCatching {
+            detectFakeScheme(userMessage)
+        }.getOrElse {
+            Log.w(TAG, "Fake detection failed: ${it.message}")
+            FakeDetectionResult(false, 0.0, emptyList(), emptyList())
+        }
+        emit(SchemeStreamEvent.FakeDetectionComplete(fakeResult))
+
+        // Pass 1: Tool-call routing
+        val historySnapshot = historyMutex.withLock { conversationHistory.toList() }
         val toolCallResponse = gemma.generate(
-            systemPrompt = TOOL_CALL_SYSTEM_PROMPT,
-            userPrompt = buildToolCallPrompt(userMessage, userProfile),
-            conversationHistory = historyMutex.withLock { conversationHistory.toList() }
+            systemPrompt        = TOOL_CALL_SYSTEM_PROMPT,
+            userPrompt          = buildToolCallPrompt(userMessage, userProfile, historySnapshot),
+            conversationHistory = historySnapshot,
         )
+        Log.d(TAG, "Tool call response: $toolCallResponse")
 
-        // Step 2: Parse and execute the tool call
+        // Pass 2: Execute DB query
         val dbResults = executeToolCall(toolCallResponse, userProfile)
+        Log.d(TAG, "DB results: ${dbResults.schemes.size} schemes, query='${dbResults.queryUsed}'")
+        emit(SchemeStreamEvent.FunctionCallExecuted(dbResults.queryUsed, dbResults.schemes.size))
 
-        // Step 3: Feed results back and stream the explanation
-        val explainPrompt = buildExplainPrompt(
-            originalQuery = userMessage,
-            dbResults = dbResults,
-            language = userLanguage
-        )
-
+        // Pass 3: Stream explanation
+        val explainPrompt = buildExplainPrompt(userMessage, dbResults, userLanguage)
         val fullResponse = StringBuilder()
         try {
             gemma.generateStream(
-                systemPrompt = EXPLAIN_SYSTEM_PROMPT,
-                userPrompt = explainPrompt,
-                conversationHistory = historyMutex.withLock { conversationHistory.toList() }
+                systemPrompt        = systemPrompt,
+                userPrompt          = explainPrompt,
+                conversationHistory = historySnapshot,
             ).collect { token ->
                 fullResponse.append(token)
-                emit(token)
+                emit(SchemeStreamEvent.Token(token))
             }
         } finally {
-            // Always update history even if stream errors or is cancelled
+            val responseText = fullResponse.toString()
+            emit(SchemeStreamEvent.Complete(responseText))
+
+            // Update history (max 10 messages → 5 pairs)
             historyMutex.withLock {
+                if (conversationHistory.size >= 20) {
+                    repeat(2) { conversationHistory.removeAt(0) }
+                }
                 conversationHistory.add(ChatTurn(ChatRole.USER, userMessage))
-                conversationHistory.add(ChatTurn(ChatRole.ASSISTANT, fullResponse.toString()))
+                conversationHistory.add(ChatTurn(ChatRole.ASSISTANT, responseText))
+            }
+
+            // Update ConversationState
+            stateMutex.withLock {
+                val activeSchemeId = dbResults.schemes.firstOrNull()?.id
+                val updatedMessages = (_conversationState.messages + listOf(
+                    Message("user", userMessage, activeSchemeId),
+                    Message("assistant", responseText, activeSchemeId),
+                )).takeLast(10)
+                _conversationState = _conversationState.copy(
+                    messages             = updatedMessages,
+                    currentSchemeContext = dbResults.schemes.firstOrNull()
+                        ?: _conversationState.currentSchemeContext,
+                    userProfileContext   = userProfile ?: _conversationState.userProfileContext,
+                )
             }
         }
     }
 
-    suspend fun clearHistory() = historyMutex.withLock { conversationHistory.clear() }
+    suspend fun clearHistory() {
+        historyMutex.withLock { conversationHistory.clear() }
+        stateMutex.withLock { _conversationState = ConversationState() }
+    }
 
-    // â”€â”€ Tool call execution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Fake detection ────────────────────────────────────────────────────────
+
+    private suspend fun detectFakeScheme(userMessage: String): FakeDetectionResult {
+        val response = gemma.generate(
+            systemPrompt        = fakeDetectionPrompt,
+            userPrompt          = userMessage,
+            conversationHistory = emptyList(),
+        )
+        return parseFakeDetectionResult(response)
+    }
+
+    private fun parseFakeDetectionResult(response: String): FakeDetectionResult {
+        return runCatching {
+            val json       = JSONObject(extractJson(response))
+            val confidence = json.optDouble("confidence", 0.0)
+            val reasons    = mutableListOf<String>()
+            val flags      = mutableListOf<String>()
+            json.optJSONArray("reasons")?.let  { for (i in 0 until it.length()) reasons.add(it.getString(i)) }
+            json.optJSONArray("flagsDetected")?.let { for (i in 0 until it.length()) flags.add(it.getString(i)) }
+            FakeDetectionResult(
+                isFake        = confidence > 0.7,
+                confidence    = confidence,
+                reasons       = reasons,
+                flagsDetected = flags,
+            )
+        }.getOrElse {
+            Log.w(TAG, "Failed to parse fake detection JSON: ${it.message}")
+            FakeDetectionResult(false, 0.0, emptyList(), emptyList())
+        }
+    }
+
+    // ── Tool call execution ───────────────────────────────────────────────────
+
+    /** Exposed for tests — parse and execute a raw model response containing a function call. */
+    internal suspend fun parseAndExecuteFunctionCall(modelResponse: String): SchemeQueryResult =
+        executeToolCall(modelResponse, null)
 
     private suspend fun executeToolCall(
-        toolCallJson: String,
-        profile: UserProfile?
+        toolCallResponse: String,
+        profile: UserProfile?,
     ): SchemeQueryResult {
-        return runCatching {
-            val json = JSONObject(extractJson(toolCallJson))
-            val tool = json.getString("tool")
-            val args = json.getJSONObject("args")
 
-            when (tool) {
-                "query_scheme_db" -> {
-                    val query = args.optString("query", "").trim()
-                    val state = args.optString("state", profile?.state ?: "ALL")
-                    val schemes = schemeDao.searchSchemes(query, limit = 20)
-                        .filter { scheme ->
-                            state == "ALL" ||
+        // Pattern 1: [FUNCTION_CALL: query_scheme_db({...})]
+        val funcRegex = Regex(
+            """\[FUNCTION_CALL:\s*query_scheme_db\(\s*(\{.*?})\s*\)\]""",
+            RegexOption.DOT_MATCHES_ALL
+        )
+        funcRegex.find(toolCallResponse)?.let { match ->
+            return runCatching {
+                val args     = JSONObject(match.groupValues[1])
+                val query    = args.optString("query", "").trim()
+                val state    = args.optString("state", profile?.state ?: "ALL")
+                val category = args.optString("category", "ALL")
+                Log.d(TAG, "FUNCTION_CALL intercepted: query='$query' state='$state' category='$category'")
+
+                val schemes = schemeDao.searchSchemes(query, limit = 20)
+                    .filter { scheme ->
+                        (state == "ALL" ||
                             scheme.targetStates == "ALL" ||
-                            scheme.targetStates.split(",").map { it.trim() }.contains(state)
-                        }
-                        .take(5)
-                    SchemeQueryResult(schemes = schemes, queryUsed = query)
-                }
-                "get_eligible_schemes" -> {
-                    if (profile == null) {
-                        SchemeQueryResult(schemes = emptyList(), queryUsed = "no_profile_provided")
-                    } else {
-                        val eligible = eligibilityEngine.getEligibleSchemes(profile)
-                        SchemeQueryResult(
-                            schemes = eligible.map { it.scheme },
-                            queryUsed = "eligibility_check"
-                        )
+                            scheme.targetStates.split(",").map { it.trim() }.contains(state)) &&
+                        (category == "ALL" || scheme.category == category)
                     }
-                }
-                "check_fake_scheme" -> {
-                    // Returns empty â€” signals to explain why the scheme seems fake
-                    SchemeQueryResult(schemes = emptyList(), queryUsed = "fake_check", isFakeCheck = true)
-                }
-                else -> SchemeQueryResult(schemes = emptyList(), queryUsed = tool)
+                    .take(5)
+                SchemeQueryResult(schemes = schemes, queryUsed = query)
+            }.getOrElse {
+                Log.w(TAG, "FUNCTION_CALL parse error: ${it.message}")
+                fallbackSearch(toolCallResponse, profile)
             }
-        }.getOrElse {
-            // If tool call parsing fails, sanitize and do a plain text search as fallback
-            val cleanedQuery = toolCallJson
-                .replace(Regex("""[{}\[\]"\\:,]"""), " ")
-                .replace(Regex("""\s+"""), " ")
-                .trim()
-                .take(100)
-            val schemes = schemeDao.searchSchemes(cleanedQuery, limit = 3)
-            SchemeQueryResult(schemes = schemes, queryUsed = "fallback_search")
         }
+
+        // Pattern 2: Legacy JSON tool call
+        val jsonRegex = Regex("""\{[^{}]*"tool"[^{}]*}""", RegexOption.DOT_MATCHES_ALL)
+        jsonRegex.find(toolCallResponse)?.let { match ->
+            return runCatching {
+                val json = JSONObject(match.value)
+                when (json.optString("tool")) {
+                    "query_scheme_db" -> {
+                        val args  = json.getJSONObject("args")
+                        val query = args.optString("query", "").trim()
+                        val state = args.optString("state", profile?.state ?: "ALL")
+                        val schemes = schemeDao.searchSchemes(query, limit = 20)
+                            .filter { it.targetStates == "ALL" || it.targetStates.split(",").map { s -> s.trim() }.contains(state) }
+                            .take(5)
+                        SchemeQueryResult(schemes = schemes, queryUsed = query)
+                    }
+                    "get_eligible_schemes" -> {
+                        val eligible = profile?.let { eligibilityEngine.getEligibleSchemes(it) } ?: emptyList()
+                        SchemeQueryResult(schemes = eligible.map { it.scheme }, queryUsed = "eligibility_check")
+                    }
+                    else -> fallbackSearch(toolCallResponse, profile)
+                }
+            }.getOrElse { fallbackSearch(toolCallResponse, profile) }
+        }
+
+        return fallbackSearch(toolCallResponse, profile)
     }
 
-    private fun extractJson(text: String): String {
-        // Model sometimes wraps JSON in markdown code blocks
-        val jsonRegex = Regex("""```(?:json)?\s*(\{.*?})\s*```""", RegexOption.DOT_MATCHES_ALL)
-        val match = jsonRegex.find(text)
-        return match?.groupValues?.get(1) ?: text.trim()
+    private suspend fun fallbackSearch(raw: String, profile: UserProfile?): SchemeQueryResult {
+        val q = raw.replace(Regex("""[{}\[\]"\\:,]"""), " ").replace(Regex("""\s+"""), " ").trim().take(100)
+        Log.d(TAG, "Fallback FTS search: '$q'")
+        return SchemeQueryResult(schemes = schemeDao.searchSchemes(q, limit = 3), queryUsed = "fallback:$q")
     }
 
-    private fun buildToolCallPrompt(userMessage: String, profile: UserProfile?): String {
-        val profileContext = profile?.let {
-            "User profile: state=${it.state}, income=${it.annualIncomeRupees}, category=${it.socialCategory}"
-        } ?: "No profile provided."
-        return "$profileContext\n\nUser question: $userMessage"
-    }
+    // ── Prompt builders ───────────────────────────────────────────────────────
+
+    private fun buildToolCallPrompt(
+        userMessage: String,
+        profile: UserProfile?,
+        history: List<ChatTurn>,
+    ): String = buildString {
+        profile?.let { appendLine("User profile: state=${it.state}, income=${it.annualIncomeRupees}, category=${it.socialCategory}") }
+        _conversationState.currentSchemeContext?.let {
+            appendLine("Currently discussing: ${it.nameEn} (${it.nameHi}) [ID: ${it.id}]")
+        }
+        appendLine("User question: $userMessage")
+    }.trimEnd()
 
     private fun buildExplainPrompt(
         originalQuery: String,
         dbResults: SchemeQueryResult,
-        language: String
+        language: String,
     ): String {
-        if (dbResults.schemes.isEmpty() && dbResults.isFakeCheck) {
-            return """
-                The user asked: "$originalQuery"
-                This scheme does NOT exist in our verified database of 447 government schemes.
-                Explain clearly why this is likely a fake/scam scheme.
-                Language: $language
-            """.trimIndent()
-        }
-
         if (dbResults.schemes.isEmpty()) {
             return """
-                The user asked: "$originalQuery"
-                No matching schemes found in our database.
-                Tell the user honestly that you couldn't find this scheme, and suggest they check myscheme.gov.in
+                User asked: "$originalQuery"
+                query_scheme_db returned: {"found": false, "schemes": []}
+                No matching schemes found. Follow the NOT FOUND rule exactly.
                 Language: $language
             """.trimIndent()
         }
 
-        val schemesText = dbResults.schemes.joinToString("\n\n") { scheme ->
+        val schemesJson = dbResults.schemes.joinToString("\n\n") { s ->
+            val verifiedDate = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.ENGLISH)
+                .format(java.util.Date(s.lastVerifiedEpoch))
             """
-            SCHEME: ${scheme.nameHi} (${scheme.nameEn})
-            ID: ${scheme.id}
-            Benefit: ${scheme.benefitAmount ?: "See details"}
-            Category: ${scheme.category}
-            Target: ${scheme.targetStates}, ${scheme.targetCategory}
-            Confidence: ${(scheme.confidenceScore * 100).toInt()}%
-            Portal: ${scheme.portalUrl ?: "N/A"}
+            SCHEME: ${s.nameHi} (${s.nameEn})
+            ID: ${s.id}
+            Description: ${s.descriptionHi}
+            Benefit: ${s.benefitAmount ?: "Not specified in DB"}
+            BenefitType: ${s.benefitType}
+            Target: states=${s.targetStates}, gender=${s.targetGender}, category=${s.targetCategory}
+            MaxIncomeLPA: ${s.maxIncomeLPA}
+            MinAge: ${s.minAge}, MaxAge: ${s.maxAge}
+            Confidence: ${(s.confidenceScore * 100).toInt()}%
+            LastVerified: $verifiedDate
+            ApplicationURL: ${s.portalUrl ?: "https://myscheme.gov.in"}
             """.trimIndent()
         }
 
         return """
             User asked: "$originalQuery"
-            
-            VERIFIED DATABASE RESULTS (explain ONLY these â€” do not add or invent):
-            $schemesText
-            
             Language: $language
+            
+            VERIFIED DATABASE RESULTS — explain ONLY these. Do not add or invent.
+            query_scheme_db returned: {"found": true}
+            
+            $schemesJson
         """.trimIndent()
     }
+
+    private fun extractJson(text: String): String {
+        val fenced = Regex("""```(?:json)?\s*(\{.*?})\s*```""", RegexOption.DOT_MATCHES_ALL).find(text)
+        return fenced?.groupValues?.get(1) ?: text.trim()
+    }
+
+    private fun loadAsset(path: String): String =
+        runCatching { context.assets.open(path).bufferedReader().use { it.readText() } }
+            .getOrElse {
+                Log.w(TAG, "Could not load asset '$path': ${it.message}")
+                FALLBACK_SYSTEM_PROMPT
+            }
+
+    // ── Companion ─────────────────────────────────────────────────────────────
 
     companion object {
-        private val TOOL_CALL_SYSTEM_PROMPT = """
-You are a tool-call router. Based on the user's question, output ONLY a JSON tool call.
+        internal val TOOL_CALL_SYSTEM_PROMPT = """
+You are a tool-call router. Based on the user question, output EXACTLY one function call and NOTHING else.
 
-Available tools:
-- query_scheme_db: Search for government schemes by name/topic
-  args: {"query": "search terms", "state": "two-letter state code or ALL"}
-- get_eligible_schemes: Get schemes matching the user's profile
-  args: {}
-- check_fake_scheme: Verify if a claimed scheme is real
-  args: {"claimed_name": "scheme name"}
+SYNTAX:
+[FUNCTION_CALL: query_scheme_db({"query": "<2-5 key words>", "state": "<2-letter state or ALL>", "category": "<AGRICULTURE|EDUCATION|HEALTH|HOUSING|WOMEN|YOUTH|SC_ST|GENERAL|ALL>"})]
 
-Output ONLY valid JSON. No explanation. No preamble.
-Example: {"tool": "query_scheme_db", "args": {"query": "kisan pension", "state": "UP"}}
+- Use currently-discussing scheme context for follow-up questions if no new scheme is named.
+- Output ONLY the [FUNCTION_CALL: ...] line. Zero other text.
         """.trimIndent()
 
-        private val EXPLAIN_SYSTEM_PROMPT = """
-You are Pocket Sarkar â€” a helpful civic assistant for Indian citizens.
-
-Rules:
-- Explain ONLY the scheme data provided. Do not add or invent anything.
-- Use simple, conversational language. No bureaucratic jargon.
-- Banned words: "beneficiary", "provisions", "pursuant", "hereinafter", "notwithstanding"
-- Always mention: benefit amount, who qualifies, how to apply (1 step)
-- If confidence score < 70%, add: "Ye information thodi purani ho sakti hai â€” confirm karein"
-- End with: "Kaunsa pehle dekhein? Document list bhi bata sakta hoon."
-        """.trimIndent()
+        private val FALLBACK_SYSTEM_PROMPT =
+            "You are Pocket Sarkar. Explain ONLY the scheme data provided. " +
+            "If no data, say: Mujhe yeh scheme nahi mili. Kripya myscheme.gov.in dekhein."
     }
 }
-
-private data class SchemeQueryResult(
-    val schemes: List<com.pocketsarkar.db.entities.Scheme>,
-    val queryUsed: String,
-    val isFakeCheck: Boolean = false,
-)

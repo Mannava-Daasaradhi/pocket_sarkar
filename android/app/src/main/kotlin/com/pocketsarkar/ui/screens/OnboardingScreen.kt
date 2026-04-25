@@ -86,10 +86,16 @@ fun OnboardingScreen(
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Enter your name") },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PSNavy,
-                        unfocusedBorderColor = PSBorder,
-                        focusedLabelColor = PSNavy
-                    ),
+                    focusedTextColor = PSTextPrimary,
+                    unfocusedTextColor = PSTextPrimary,
+                    focusedBorderColor = PSNavy,
+                    unfocusedBorderColor = PSBorder,
+                    focusedLabelColor = PSNavy,
+                    unfocusedLabelColor = PSTextSecondary,
+                    focusedPlaceholderColor = PSTextSecondary,
+                    unfocusedPlaceholderColor = PSTextSecondary,
+                    cursorColor = PSNavy,
+                ),
                     shape = RoundedCornerShape(12.dp)
                 )
             }

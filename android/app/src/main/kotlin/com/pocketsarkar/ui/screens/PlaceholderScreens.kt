@@ -16,16 +16,7 @@ import androidx.compose.ui.unit.dp
 // Each module gets its own file in ui/screens/ once its Phase begins.
 // ─────────────────────────────────────────────────────────────────────────────
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SchemesScreen(onBack: () -> Unit) {
-    PlaceholderScreen(
-        title    = "Scheme Explainer",
-        subtitle = "सरकारी योजनाएं",
-        phase    = "Phase 5",
-        onBack   = onBack,
-    )
-}
+// SchemesScreen graduated to SchemeExplainerScreen.kt (Phase 5)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
