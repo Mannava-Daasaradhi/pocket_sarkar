@@ -88,7 +88,7 @@ fun ModelSetupScreen(
                         Text(
                             "Pocket Sarkar runs entirely on your device.\n" +
                             "Your documents never leave your phone.\n\n" +
-                            "A one-time download of 3.65 GB is needed to set up the AI model.",
+                            "A one-time download of 2.58 GB is needed to set up the AI model.",
                             style = MaterialTheme.typography.bodyMedium,
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -110,7 +110,7 @@ fun ModelSetupScreen(
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("Download AI Model  (3.65 GB)")
+                            Text("Download AI Model  (2.58 GB)")
                         }
                         Text(
                             "Recommended: connect to Wi-Fi before downloading",

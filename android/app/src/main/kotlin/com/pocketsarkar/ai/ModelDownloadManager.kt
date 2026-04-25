@@ -30,8 +30,8 @@ class ModelDownloadManager @Inject constructor(
 ) {
     companion object {
         const val MODEL_URL =
-            "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm/resolve/main/gemma-4-E4B-it.litertlm"
-        const val MODEL_FILENAME = "gemma-4-E4B-it.litertlm"
+            "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm"
+        const val MODEL_FILENAME = "gemma-4-E2B-it.litertlm"
         private const val MIN_VALID_BYTES = 1_000_000_000L
     }
 

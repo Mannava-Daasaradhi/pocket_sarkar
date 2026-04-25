@@ -35,7 +35,7 @@ class GemmaEngine @Inject constructor(
     private var engineLoadFailed = false
 
     val modelPath: String =
-        context.getExternalFilesDir(null)?.absolutePath + "/models/gemma-4-E4B-it.litertlm"
+        context.getExternalFilesDir(null)?.absolutePath + "/models/gemma-4-E2B-it.litertlm"
 
     private val defaultSampler = SamplerConfig(topK = 40, topP = 0.95, temperature = 0.8)
 
